@@ -1,4 +1,5 @@
 // API service for Google Apps Script backend integration
+import { environment } from '../config/environment';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -28,22 +29,49 @@ export interface LoginResponse {
 }
 
 class ApiService {
-  private baseUrl = '/api';
+  private baseUrl: string;
+  private isProduction: boolean;
+
+  constructor() {
+    this.isProduction = environment.isProduction;
+    this.baseUrl = environment.apiBaseUrl;
+  }
 
   private async makeRequest<T>(
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
-      const url = `${this.baseUrl}${endpoint}`;
+      let url: string;
+      let fetchOptions: RequestInit;
+
+      if (this.isProduction) {
+        // In production, make direct calls to Google Apps Script
+        url = this.baseUrl + endpoint;
+        fetchOptions = {
+          method: options.method || 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+          body: options.body,
+          mode: 'cors', // Enable CORS for cross-origin requests
+        };
+      } else {
+        // In development, use the proxy
+        url = `${this.baseUrl}${endpoint}`;
+        fetchOptions = {
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+          ...options,
+        };
+      }
       
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      });
+      console.log(`Making ${fetchOptions.method} request to:`, url);
+      
+      const response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

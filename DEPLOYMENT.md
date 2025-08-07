@@ -23,20 +23,25 @@ This document provides instructions for deploying the EEU Complaint Management S
 
 ## Production Deployment
 
-### Option 1: Netlify Deployment
+### Option 1: Netlify Deployment (Recommended)
 
-The project includes a `netlify.toml` configuration file for easy deployment:
+The application is optimized for Netlify deployment with direct Google Apps Script integration:
 
-1. **Build the project**:
-   ```bash
-   npm run build
-   ```
+1. **Configure Google Apps Script**:
+   - Deploy your Google Apps Script as a web app with public access
+   - Copy the deployment URL
 
-2. **Deploy to Netlify**:
+2. **Update Configuration**:
+   - Edit `src/config/environment.ts`
+   - Replace `GOOGLE_APPS_SCRIPT_URL` with your actual script URL
+
+3. **Deploy to Netlify**:
    - Connect your GitHub repository to Netlify
    - Set build command: `npm run build`
    - Set publish directory: `dist`
    - Deploy automatically on push to main branch
+
+📖 **Detailed Guide**: See [NETLIFY_DEPLOYMENT.md](./NETLIFY_DEPLOYMENT.md) for step-by-step instructions.
 
 ### Option 2: Vercel Deployment
 
