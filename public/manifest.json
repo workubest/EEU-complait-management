@@ -1,0 +1,27 @@
+{
+  "name": "EEU Complaint Management System",
+  "short_name": "EEU CMS",
+  "description": "Ethiopia Electric Utility Complaint Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#009639",
+  "theme_color": "#009639",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/eeu-logo.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["utilities", "government", "productivity"],
+  "lang": "en",
+  "dir": "ltr"
+}
