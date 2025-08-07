@@ -48,33 +48,57 @@ export function StatsCards() {
       setLoading(true);
       setError(null);
       try {
+        // First try to get dashboard stats from the backend
         const response = await apiService.getDashboardStats();
+        
         if (response.success && response.data) {
-          // Ensure the data has the expected structure with default values
+          const backendData = response.data;
+          
+          // If backend doesn't provide critical count, fetch complaints and calculate manually
+          let criticalCount = backendData.complaints?.critical ?? 0;
+          
+          if (criticalCount === 0) {
+            try {
+              const complaintsResponse = await apiService.getComplaints();
+              if (complaintsResponse.success && complaintsResponse.data) {
+                const complaints = complaintsResponse.data;
+                criticalCount = complaints.filter((complaint: any) => 
+                  complaint.Priority?.toLowerCase() === 'critical'
+                ).length;
+              }
+            } catch (complaintsErr) {
+              console.warn('Failed to fetch complaints for critical count:', complaintsErr);
+            }
+          }
+          
           const normalizedData: DashboardStats = {
             complaints: {
-              total: response.data.complaints?.total ?? 0,
-              open: response.data.complaints?.open ?? 0,
-              inProgress: response.data.complaints?.inProgress ?? 0,
-              resolved: response.data.complaints?.resolved ?? 0,
-              critical: response.data.complaints?.critical ?? 0,
-              high: response.data.complaints?.high ?? 0,
-              medium: response.data.complaints?.medium ?? 0,
-              low: response.data.complaints?.low ?? 0,
-              active: response.data.complaints?.active ?? 0,
-              inactive: response.data.complaints?.inactive ?? 0,
+              total: backendData.complaints?.total ?? 0,
+              open: backendData.complaints?.open ?? 0,
+              inProgress: backendData.complaints?.inProgress ?? 0,
+              // Map 'closed' from backend to 'resolved' for frontend
+              resolved: backendData.complaints?.closed ?? backendData.complaints?.resolved ?? 0,
+              // Use calculated critical count
+              critical: criticalCount,
+              // Map 'highPriority' from backend to 'high' for frontend
+              high: backendData.complaints?.high ?? backendData.complaints?.highPriority ?? 0,
+              medium: backendData.complaints?.medium ?? 0,
+              low: backendData.complaints?.low ?? 0,
+              active: backendData.complaints?.active ?? (backendData.complaints?.total ?? 0) - (backendData.complaints?.closed ?? backendData.complaints?.resolved ?? 0),
+              inactive: backendData.complaints?.inactive ?? (backendData.complaints?.closed ?? backendData.complaints?.resolved ?? 0),
             },
             users: {
-              total: response.data.users?.total ?? 0,
-              active: response.data.users?.active ?? 0,
-              inactive: response.data.users?.inactive ?? 0,
+              total: backendData.users?.total ?? 0,
+              active: backendData.users?.active ?? 0,
+              inactive: backendData.users?.inactive ?? 0,
             },
             performance: {
-              resolutionRate: response.data.performance?.resolutionRate ?? 0,
-              averageResponseTime: response.data.performance?.averageResponseTime ?? '0h',
-              customerSatisfaction: response.data.performance?.customerSatisfaction ?? 0,
+              resolutionRate: backendData.performance?.resolutionRate ?? 0,
+              averageResponseTime: backendData.performance?.averageResponseTime ?? '0h',
+              customerSatisfaction: backendData.performance?.customerSatisfaction ?? 0,
             }
           };
+          
           setStats(normalizedData);
         } else {
           setError('Failed to load dashboard statistics');

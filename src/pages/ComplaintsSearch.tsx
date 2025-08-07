@@ -12,11 +12,18 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Search, Filter, MapPin, User, Zap } from 'lucide-react';
-// import { mockComplaints } from '@/data/mockData';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { CalendarIcon, Search, Filter, MapPin, User, Zap, Loader2, Eye } from 'lucide-react';
 import { STATUS_CONFIG, PRIORITY_CONFIG, COMPLAINT_CATEGORIES } from '@/types/complaint';
 import { ETHIOPIAN_REGIONS } from '@/types/user';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiService } from '@/lib/api';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -34,26 +41,59 @@ export function ComplaintsSearch() {
     dateTo: undefined as Date | undefined
   });
 
-  const [complaints, setComplaints] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [viewingComplaint, setViewingComplaint] = useState<any | null>(null);
 
   React.useEffect(() => {
-    setLoading(true);
-    fetch('/api')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch complaints');
-        return res.json();
-      })
-      .then(data => {
-        setComplaints(Array.isArray(data) ? data : []);
-        setSearchResults(Array.isArray(data) ? data : []);
-        setError(null);
-      })
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchComplaints = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiService.getComplaints();
+        if (response.success && response.data) {
+          // Normalize the data structure to match frontend expectations
+          const normalizedComplaints = response.data.map((complaint: any) => {
+            // Extract region from location (e.g., "Addis Ababa, Subcity 2" -> "Addis Ababa")
+            const location = complaint.Location || complaint.region || '';
+            const region = location.split(',')[0].trim();
+            
+            return {
+              id: complaint.ID || complaint.id,
+              title: complaint.Title || complaint.title,
+              description: complaint.Description || complaint.description,
+              status: (complaint.Status || complaint.status || '').toLowerCase(),
+              priority: (complaint.Priority || complaint.priority || '').toLowerCase(),
+              category: complaint.Category || complaint.category,
+              region: region,
+              createdAt: complaint['Created At'] || complaint.createdAt,
+              updatedAt: complaint['Updated At'] || complaint.updatedAt,
+              customer: {
+                name: complaint['Customer Name'] || complaint.customerName || 'Unknown',
+                email: complaint['Customer Email'] || complaint.customerEmail || '',
+                phone: complaint['Customer Phone'] || complaint.customerPhone || '',
+                address: location
+              }
+            };
+          });
+          
+          setComplaints(normalizedComplaints);
+          setSearchResults(normalizedComplaints.filter(complaint => canAccessRegion(complaint.region)));
+        } else {
+          setError('Failed to load complaints');
+        }
+      } catch (err) {
+        console.error('Error fetching complaints:', err);
+        setError('Failed to load complaints');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchComplaints();
+  }, [canAccessRegion]);
 
   const handleSearch = () => {
     let filtered = complaints.filter(complaint => canAccessRegion(complaint.region));
@@ -316,11 +356,30 @@ export function ComplaintsSearch() {
       <Card className="border-border animate-slide-up" style={{ animationDelay: '0.2s' }}>
         <CardHeader>
           <CardTitle>
-            Search Results ({searchResults.length} complaints found)
+            Search Results ({loading ? '...' : searchResults.length} complaints found)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {searchResults.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Loading complaints...</h3>
+              <p className="text-muted-foreground">Please wait while we fetch the data</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <Zap className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Error loading complaints</h3>
+              <p className="text-muted-foreground">{error}</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
+                Try Again
+              </Button>
+            </div>
+          ) : searchResults.length === 0 ? (
             <div className="text-center py-12">
               <Zap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No complaints found</h3>
@@ -336,14 +395,20 @@ export function ComplaintsSearch() {
                         <h4 className="font-medium text-foreground">{complaint.title}</h4>
                         <Badge variant="outline">{complaint.id}</Badge>
                         <Badge 
-                          className={`${PRIORITY_CONFIG[complaint.priority].bgColor} ${PRIORITY_CONFIG[complaint.priority].color}`}
+                          className={PRIORITY_CONFIG[complaint.priority] ? 
+                            `${PRIORITY_CONFIG[complaint.priority].bgColor} ${PRIORITY_CONFIG[complaint.priority].color}` : 
+                            'bg-gray-100 text-gray-800'
+                          }
                         >
-                          {PRIORITY_CONFIG[complaint.priority].label}
+                          {PRIORITY_CONFIG[complaint.priority]?.label || complaint.priority || 'Unknown'}
                         </Badge>
                         <Badge 
-                          className={`${STATUS_CONFIG[complaint.status].bgColor} ${STATUS_CONFIG[complaint.status].color}`}
+                          className={STATUS_CONFIG[complaint.status] ? 
+                            `${STATUS_CONFIG[complaint.status].bgColor} ${STATUS_CONFIG[complaint.status].color}` : 
+                            'bg-gray-100 text-gray-800'
+                          }
                         >
-                          {STATUS_CONFIG[complaint.status].label}
+                          {STATUS_CONFIG[complaint.status]?.label || complaint.status || 'Unknown'}
                         </Badge>
                       </div>
                       
@@ -360,13 +425,115 @@ export function ComplaintsSearch() {
                           <MapPin className="h-3 w-3" />
                           <span>{complaint.region}</span>
                         </div>
-                        <span>{format(new Date(complaint.createdAt), 'MMM dd, yyyy HH:mm')}</span>
+                        <span>
+                          {complaint.createdAt ? 
+                            format(new Date(complaint.createdAt), 'MMM dd, yyyy HH:mm') : 
+                            'Date unknown'
+                          }
+                        </span>
                       </div>
                     </div>
                     
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setViewingComplaint(complaint)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Complaint Details - {complaint.id}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Title</label>
+                              <p className="text-sm">{complaint.title}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Status</label>
+                              <div className="mt-1">
+                                <Badge 
+                                  className={STATUS_CONFIG[complaint.status] ? 
+                                    `${STATUS_CONFIG[complaint.status].bgColor} ${STATUS_CONFIG[complaint.status].color}` : 
+                                    'bg-gray-100 text-gray-800'
+                                  }
+                                >
+                                  {STATUS_CONFIG[complaint.status]?.label || complaint.status || 'Unknown'}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Priority</label>
+                              <div className="mt-1">
+                                <Badge 
+                                  className={PRIORITY_CONFIG[complaint.priority] ? 
+                                    `${PRIORITY_CONFIG[complaint.priority].bgColor} ${PRIORITY_CONFIG[complaint.priority].color}` : 
+                                    'bg-gray-100 text-gray-800'
+                                  }
+                                >
+                                  {PRIORITY_CONFIG[complaint.priority]?.label || complaint.priority || 'Unknown'}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Category</label>
+                              <p className="text-sm">{complaint.category}</p>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Description</label>
+                            <p className="text-sm mt-1">{complaint.description}</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Customer Name</label>
+                              <p className="text-sm">{complaint.customer.name}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Customer Email</label>
+                              <p className="text-sm">{complaint.customer.email || 'Not provided'}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Customer Phone</label>
+                              <p className="text-sm">{complaint.customer.phone || 'Not provided'}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Location</label>
+                              <p className="text-sm">{complaint.customer.address}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Created At</label>
+                              <p className="text-sm">
+                                {complaint.createdAt ? 
+                                  format(new Date(complaint.createdAt), 'PPP p') : 
+                                  'Date unknown'
+                                }
+                              </p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
+                              <p className="text-sm">
+                                {complaint.updatedAt ? 
+                                  format(new Date(complaint.updatedAt), 'PPP p') : 
+                                  'Date unknown'
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
               ))}

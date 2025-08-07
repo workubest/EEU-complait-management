@@ -412,19 +412,30 @@ function getDashboardStatsInternal() {
       return { error: 'No headers in Complaints sheet', success: false };
     }
     const validComplaints = [];
-    let open = 0, closed = 0, inProgress = 0, highPriority = 0;
+    let open = 0, resolved = 0, inProgress = 0, critical = 0, high = 0, medium = 0, low = 0;
     for (let i = 1; i < complaintData.length; i++) {
       const row = complaintData[i];
       if (row.every(cell => cell === '' || cell === null || typeof cell === 'undefined')) continue;
       validComplaints.push(row);
       const statusIdx = complaintHeaders.indexOf('Status');
       const priorityIdx = complaintHeaders.indexOf('Priority');
+      
+      // Count by status
       if (statusIdx !== -1) {
-        if (row[statusIdx] === 'open') open++;
-        if (row[statusIdx] === 'closed' || row[statusIdx] === 'resolved') closed++;
-        if (row[statusIdx] === 'in-progress') inProgress++;
+        const status = (row[statusIdx] || '').toString().toLowerCase();
+        if (status === 'open') open++;
+        if (status === 'closed' || status === 'resolved') resolved++;
+        if (status === 'in-progress' || status === 'in progress') inProgress++;
       }
-      if (priorityIdx !== -1 && row[priorityIdx] === 'high') highPriority++;
+      
+      // Count by priority
+      if (priorityIdx !== -1) {
+        const priority = (row[priorityIdx] || '').toString().toLowerCase();
+        if (priority === 'critical') critical++;
+        if (priority === 'high') high++;
+        if (priority === 'medium') medium++;
+        if (priority === 'low') low++;
+      }
     }
     let totalComplaints = validComplaints.length;
     // Users stats
@@ -453,7 +464,7 @@ function getDashboardStatsInternal() {
     }
     // Performance (placeholder)
     const performance = {
-      resolutionRate: closed > 0 ? Math.round((closed / totalComplaints) * 100) : 0,
+      resolutionRate: resolved > 0 ? Math.round((resolved / totalComplaints) * 100) : 0,
       averageResponseTime: '2.5 hours',
       customerSatisfaction: 4.2
     };
@@ -462,9 +473,14 @@ function getDashboardStatsInternal() {
         complaints: {
           total: totalComplaints,
           open,
-          closed,
           inProgress,
-          highPriority
+          resolved,
+          critical,
+          high,
+          medium,
+          low,
+          active: totalComplaints - resolved, // Active complaints (not resolved)
+          inactive: resolved // Inactive complaints (resolved)
         },
         users: {
           total: totalUsers,
