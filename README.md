@@ -2,6 +2,8 @@
 
 A comprehensive complaint management system built for Ethiopian Electric Utility (EEU) to handle customer complaints efficiently.
 
+**System Designed by:** WORKU MESAFINT ADDIS [504530]
+
 ## Project Overview
 
 This application provides a complete solution for managing customer complaints with features including:

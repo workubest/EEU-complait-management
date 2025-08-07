@@ -374,12 +374,20 @@ function createComplaintInternal(data) {
       'Customer Name': data.customerName,
       'Customer Email': data.customerEmail || '',
       'Customer Phone': data.customerPhone || '',
-      Location: data.location || '',
+      'Customer Address': data.customerAddress || '',
+      Region: data.region || data.location || '',
+      Location: data.location || data.region || '',
+      'Meter Number': data.meterNumber || '',
+      'Account Number': data.accountNumber || '',
       'Assigned To': data.assignedTo || '',
-      'Created At': new Date().toISOString(),
-      'Updated At': new Date().toISOString(),
-      Notes: [],
-      Attachments: []
+      'Assigned By': data.assignedBy || '',
+      'Created By': data.createdBy || '',
+      'Created At': data.createdAt || new Date().toISOString(),
+      'Updated At': data.updatedAt || new Date().toISOString(),
+      'Resolved At': data.resolvedAt || '',
+      'Estimated Resolution': data.estimatedResolution || '',
+      Notes: data.notes || '',
+      Attachments: data.attachments || ''
     };
     const row = headers.map(h => newComplaint[h] !== undefined ? newComplaint[h] : '');
     sheet.appendRow(row);

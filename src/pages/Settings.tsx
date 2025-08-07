@@ -621,13 +621,14 @@ export function Settings() {
       </div>
 
       <Tabs defaultValue="general" className="animate-slide-up">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="workflow">Workflow</TabsTrigger>
           <TabsTrigger value="permissions">Permissions</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="about">About</TabsTrigger>
         </TabsList>
 
         {/* General Settings */}

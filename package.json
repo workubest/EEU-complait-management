@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "author": "WORKU MESAFINT ADDIS [504530]",
+  "description": "EEU Complaint Management System - A comprehensive complaint management system built for Ethiopian Electric Utility (EEU)",
   "scripts": {
     "dev": "vite",
     "start": "node start-dev.js",

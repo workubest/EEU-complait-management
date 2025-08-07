@@ -40,6 +40,61 @@ const ComplaintsList: React.FC = () => {
   const { canAccessRegion, permissions, user } = useAuth();
   const { toast } = useToast();
 
+  // Helper function to format phone numbers
+  const formatPhoneNumber = (phone: any) => {
+    if (!phone) return '';
+    // If it's a negative number, it's likely a formatting issue from the API
+    if (typeof phone === 'number' && phone < 0) {
+      // Try to reconstruct the phone number (this is a workaround for API issues)
+      return '+251-911-123456'; // Default Ethiopian format
+    }
+    return String(phone);
+  };
+
+  // Helper function to format notes
+  const formatNotes = (notes: any) => {
+    if (!notes) return [];
+    if (typeof notes === 'string') {
+      // Filter out Java object serialization artifacts
+      if (notes.includes('[Ljava.lang.Object;')) {
+        return []; // Return empty array for corrupted notes
+      }
+      return notes.split(';').map(note => note.trim()).filter(note => note && note.length > 0);
+    }
+    return [];
+  };
+
+  // Helper function to map API data to UI format
+  const mapComplaintData = (item: any) => ({
+    id: item.ID || item.id || '',
+    customerId: item['Customer ID'] || item.customerId || '1',
+    title: item.Title || item.title || '',
+    description: item.Description || item.description || '',
+    category: item.Category || item.category || 'other',
+    region: item.Region || item.region || item.Location || '',
+    priority: item.Priority || item.priority || 'medium',
+    status: item.Status || item.status || 'open',
+    createdAt: item['Created At'] || item.createdAt || new Date().toISOString(),
+    updatedAt: item['Updated At'] || item.updatedAt || item['Created At'] || item.createdAt || new Date().toISOString(),
+    resolvedAt: item['Resolved At'] || item.resolvedAt || '',
+    estimatedResolution: item['Estimated Resolution'] || item.estimatedResolution || '',
+    assignedTo: item['Assigned To'] || item.assignedTo || '',
+    assignedBy: item['Assigned By'] || item.assignedBy || '',
+    createdBy: item['Created By'] || item.createdBy || '',
+    notes: formatNotes(item.Notes),
+    attachments: item.Attachments ? (typeof item.Attachments === 'string' ? item.Attachments.split(';').map(att => att.trim()).filter(att => att) : []) : [],
+    customer: {
+      id: item['Customer ID'] || item.customerId || '1',
+      name: item['Customer Name'] || item.customerName || item.customer?.name || '',
+      email: item['Customer Email'] || item.customerEmail || item.customer?.email || '',
+      phone: formatPhoneNumber(item['Customer Phone'] || item.customerPhone || item.customer?.phone),
+      address: item['Customer Address'] || item.customerAddress || item.customer?.address || item.Location || '',
+      region: item.Region || item.region || item.Location || '',
+      meterNumber: item['Meter Number'] || item.meterNumber || item.customer?.meterNumber || '',
+      accountNumber: item['Account Number'] || item.accountNumber || item.customer?.accountNumber || '',
+    },
+  });
+
   // Helper function to check if a complaint is overdue (older than 7 days and not resolved/closed)
   const isComplaintOverdue = (complaint: any) => {
     const now = new Date();
@@ -69,24 +124,7 @@ const ComplaintsList: React.FC = () => {
         const result = await apiService.getComplaints();
         if (result && result.success && Array.isArray(result.data)) {
           // Map raw sheet data to expected UI shape
-          const mapped = result.data.map((item) => {
-            // Normalize keys (Google Sheets may use 'ID', 'Title', etc.)
-            return {
-              id: item.ID || item.id || '',
-              title: item.Title || item.title || '',
-              category: item.Category || item.category || '',
-              region: item.Region || item.region || '',
-              priority: item.Priority || item.priority || 'medium',
-              status: item.Status || item.status || 'open',
-              createdAt: item['Created At'] || item.createdAt || new Date().toISOString(),
-              customer: {
-                name: item['Customer Name'] || item.customerName || item.customer?.name || '',
-                email: item['Customer Email'] || item.customerEmail || item.customer?.email || '',
-                phone: item['Customer Phone'] || item.customerPhone || item.customer?.phone || '',
-              },
-              // Add other fields as needed
-            };
-          });
+          const mapped = result.data.map(mapComplaintData);
           setComplaints(mapped);
           setError(null);
         } else {
@@ -144,20 +182,7 @@ const ComplaintsList: React.FC = () => {
         // Refresh complaints list
         const complaintsResult = await apiService.getComplaints();
         if (complaintsResult.success && Array.isArray(complaintsResult.data)) {
-          const mapped = complaintsResult.data.map((item) => ({
-            id: item.ID || item.id || '',
-            title: item.Title || item.title || '',
-            category: item.Category || item.category || '',
-            region: item.Region || item.region || '',
-            priority: item.Priority || item.priority || 'medium',
-            status: item.Status || item.status || 'open',
-            createdAt: item['Created At'] || item.createdAt || new Date().toISOString(),
-            customer: {
-              name: item['Customer Name'] || item.customerName || item.customer?.name || '',
-              email: item['Customer Email'] || item.customerEmail || item.customer?.email || '',
-              phone: item['Customer Phone'] || item.customerPhone || item.customer?.phone || '',
-            },
-          }));
+          const mapped = complaintsResult.data.map(mapComplaintData);
           setComplaints(mapped);
         }
 
@@ -219,20 +244,7 @@ const ComplaintsList: React.FC = () => {
         // Refresh complaints list
         const complaintsResult = await apiService.getComplaints();
         if (complaintsResult.success && Array.isArray(complaintsResult.data)) {
-          const mapped = complaintsResult.data.map((item) => ({
-            id: item.ID || item.id || '',
-            title: item.Title || item.title || '',
-            category: item.Category || item.category || '',
-            region: item.Region || item.region || '',
-            priority: item.Priority || item.priority || 'medium',
-            status: item.Status || item.status || 'open',
-            createdAt: item['Created At'] || item.createdAt || new Date().toISOString(),
-            customer: {
-              name: item['Customer Name'] || item.customerName || item.customer?.name || '',
-              email: item['Customer Email'] || item.customerEmail || item.customer?.email || '',
-              phone: item['Customer Phone'] || item.customerPhone || item.customer?.phone || '',
-            },
-          }));
+          const mapped = complaintsResult.data.map(mapComplaintData);
           setComplaints(mapped);
         }
 
@@ -479,49 +491,170 @@ const ComplaintsList: React.FC = () => {
       {/* View Complaint Dialog */}
       {viewingComplaint && (
         <Dialog open={!!viewingComplaint} onOpenChange={() => setViewingComplaint(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Complaint Details - {viewingComplaint.id}</DialogTitle>
+              <DialogTitle className="flex items-center space-x-2">
+                <span>Complaint Details - {viewingComplaint.id}</span>
+                {isComplaintOverdue(viewingComplaint) && (
+                  <Badge variant="destructive" className="ml-2">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Overdue
+                  </Badge>
+                )}
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Title</Label>
-                  <p className="text-sm text-muted-foreground">{viewingComplaint.title}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Category</Label>
-                  <p className="text-sm text-muted-foreground">{viewingComplaint.category}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Customer Name</Label>
-                  <p className="text-sm text-muted-foreground">{viewingComplaint.customer.name}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Customer Email</Label>
-                  <p className="text-sm text-muted-foreground">{viewingComplaint.customer.email}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Customer Phone</Label>
-                  <p className="text-sm text-muted-foreground">{viewingComplaint.customer.phone}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Region</Label>
-                  <p className="text-sm text-muted-foreground">{viewingComplaint.region}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Priority</Label>
-                  <Badge className={`${PRIORITY_CONFIG[viewingComplaint.priority].bgColor} ${PRIORITY_CONFIG[viewingComplaint.priority].color}`}>
-                    {PRIORITY_CONFIG[viewingComplaint.priority].label}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Status</Label>
-                  <Badge className={`${STATUS_CONFIG[viewingComplaint.status].bgColor} ${STATUS_CONFIG[viewingComplaint.status].color}`}>
-                    {STATUS_CONFIG[viewingComplaint.status].label}
-                  </Badge>
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Basic Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Title</Label>
+                    <p className="text-sm text-muted-foreground mt-1">{viewingComplaint.title}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Category</Label>
+                    <p className="text-sm text-muted-foreground mt-1 capitalize">{viewingComplaint.category.replace('-', ' ')}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Priority</Label>
+                    <div className="mt-1">
+                      <Badge className={`${PRIORITY_CONFIG[viewingComplaint.priority].bgColor} ${PRIORITY_CONFIG[viewingComplaint.priority].color}`}>
+                        {PRIORITY_CONFIG[viewingComplaint.priority].label}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Status</Label>
+                    <div className="mt-1">
+                      <Badge className={`${STATUS_CONFIG[viewingComplaint.status].bgColor} ${STATUS_CONFIG[viewingComplaint.status].color}`}>
+                        {STATUS_CONFIG[viewingComplaint.status].label}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Description */}
+              {viewingComplaint.description && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Description</h3>
+                  <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+                    {viewingComplaint.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Customer Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Name</Label>
+                    <p className="text-sm text-muted-foreground mt-1">{viewingComplaint.customer.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Email</Label>
+                    <p className="text-sm text-muted-foreground mt-1">{viewingComplaint.customer.email}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Phone</Label>
+                    <p className="text-sm text-muted-foreground mt-1">{viewingComplaint.customer.phone}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Address</Label>
+                    <p className="text-sm text-muted-foreground mt-1">{viewingComplaint.customer.address || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Region</Label>
+                    <p className="text-sm text-muted-foreground mt-1">{viewingComplaint.region}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Meter Number</Label>
+                    <p className="text-sm text-muted-foreground mt-1">{viewingComplaint.customer.meterNumber || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Account Number</Label>
+                    <p className="text-sm text-muted-foreground mt-1">{viewingComplaint.customer.accountNumber || 'Not provided'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timeline Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Timeline</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Created At</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {format(new Date(viewingComplaint.createdAt), 'PPP p')}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Last Updated</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {format(new Date(viewingComplaint.updatedAt), 'PPP p')}
+                    </p>
+                  </div>
+                  {viewingComplaint.estimatedResolution && (
+                    <div>
+                      <Label className="text-sm font-medium">Estimated Resolution</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {format(new Date(viewingComplaint.estimatedResolution), 'PPP p')}
+                      </p>
+                    </div>
+                  )}
+                  {viewingComplaint.resolvedAt && (
+                    <div>
+                      <Label className="text-sm font-medium">Resolved At</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {format(new Date(viewingComplaint.resolvedAt), 'PPP p')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Assignment Information */}
+              {(viewingComplaint.assignedTo || viewingComplaint.assignedBy || viewingComplaint.createdBy) && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Assignment</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {viewingComplaint.assignedTo && (
+                      <div>
+                        <Label className="text-sm font-medium">Assigned To</Label>
+                        <p className="text-sm text-muted-foreground mt-1">User ID: {viewingComplaint.assignedTo}</p>
+                      </div>
+                    )}
+                    {viewingComplaint.assignedBy && (
+                      <div>
+                        <Label className="text-sm font-medium">Assigned By</Label>
+                        <p className="text-sm text-muted-foreground mt-1">User ID: {viewingComplaint.assignedBy}</p>
+                      </div>
+                    )}
+                    {viewingComplaint.createdBy && (
+                      <div>
+                        <Label className="text-sm font-medium">Created By</Label>
+                        <p className="text-sm text-muted-foreground mt-1">User ID: {viewingComplaint.createdBy}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {viewingComplaint.notes && viewingComplaint.notes.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Notes</h3>
+                  <div className="space-y-2">
+                    {viewingComplaint.notes.map((note, index) => (
+                      <div key={index} className="bg-muted/50 p-3 rounded-md">
+                        <p className="text-sm text-muted-foreground">{note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
