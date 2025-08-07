@@ -44,12 +44,34 @@ cd EEU-complait-management
 npm install
 ```
 
-3. Start the development server:
+3. Start the backend proxy server (in one terminal):
+```sh
+node server.js
+```
+
+4. Start the frontend development server (in another terminal):
 ```sh
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+5. Open your browser and navigate to `http://localhost:8080`
+
+### Development Setup
+
+The application uses a two-server architecture:
+
+- **Frontend Server**: Vite development server running on port 8080
+- **Backend Proxy**: Express server running on port 3001 that forwards API requests to Google Apps Script
+
+Make sure both servers are running for full functionality.
+
+### Default Login Credentials
+
+For testing purposes, you can use these credentials:
+- **Admin**: `admin@eeu.gov.et` / `admin123`
+- **Manager**: `manager@eeu.gov.et` / `manager123`
+- **Staff**: `staff@eeu.gov.et` / `staff123`
+- **Customer**: `customer@eeu.gov.et` / `customer123`
 
 ## Features
 
