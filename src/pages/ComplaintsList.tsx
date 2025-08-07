@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Filter, Eye, Edit, User, Calendar, Trash2, UserCheck, Plus } from 'lucide-react';
+import { Search, Filter, Eye, Edit, User, Calendar, Trash2, UserCheck, Plus, AlertTriangle } from 'lucide-react';
 // import { mockComplaints } from '@/data/mockData';
 import { STATUS_CONFIG, PRIORITY_CONFIG, Complaint } from '@/types/complaint';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,6 +39,19 @@ import { format } from 'date-fns';
 const ComplaintsList: React.FC = () => {
   const { canAccessRegion, permissions, user } = useAuth();
   const { toast } = useToast();
+
+  // Helper function to check if a complaint is overdue (older than 7 days and not resolved/closed)
+  const isComplaintOverdue = (complaint: any) => {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+    const createdAt = new Date(complaint.createdAt);
+    const status = complaint.status?.toLowerCase();
+    
+    return createdAt < sevenDaysAgo && 
+           status !== 'resolved' && 
+           status !== 'closed' && 
+           status !== 'cancelled';
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -373,7 +386,15 @@ const ComplaintsList: React.FC = () => {
                   filteredComplaints.map((complaint) => (
                     <TableRow key={complaint.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell className="font-medium">
-                        {complaint.id}
+                        <div className="flex items-center space-x-2">
+                          <span>{complaint.id}</span>
+                          {isComplaintOverdue(complaint) && (
+                            <AlertTriangle 
+                              className="h-4 w-4 text-destructive" 
+                              title="Overdue - Created more than 7 days ago"
+                            />
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="max-w-[200px]">

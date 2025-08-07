@@ -7,7 +7,8 @@ import {
   CheckCircle, 
   FileText,
   TrendingUp,
-  Users
+  Users,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiService } from '@/lib/api';
@@ -24,6 +25,7 @@ interface DashboardStats {
     low: number;
     active: number;
     inactive: number;
+    overdue: number;
   };
   users: {
     total: number;
@@ -56,6 +58,7 @@ export function StatsCards() {
           
           // If backend doesn't provide critical count, fetch complaints and calculate manually
           let criticalCount = backendData.complaints?.critical ?? 0;
+          let overdueCount = 0;
           
           if (criticalCount === 0) {
             try {
@@ -65,9 +68,23 @@ export function StatsCards() {
                 criticalCount = complaints.filter((complaint: any) => 
                   complaint.Priority?.toLowerCase() === 'critical'
                 ).length;
+                
+                // Calculate overdue complaints (older than 7 days and not resolved/closed)
+                const now = new Date();
+                const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+                
+                overdueCount = complaints.filter((complaint: any) => {
+                  const createdAt = new Date(complaint['Created At'] || complaint.createdAt);
+                  const status = (complaint.Status || complaint.status || '').toLowerCase();
+                  
+                  return createdAt < sevenDaysAgo && 
+                         status !== 'resolved' && 
+                         status !== 'closed' && 
+                         status !== 'cancelled';
+                }).length;
               }
             } catch (complaintsErr) {
-              console.warn('Failed to fetch complaints for critical count:', complaintsErr);
+              console.warn('Failed to fetch complaints for critical and overdue count:', complaintsErr);
             }
           }
           
@@ -86,6 +103,8 @@ export function StatsCards() {
               low: backendData.complaints?.low ?? 0,
               active: backendData.complaints?.active ?? (backendData.complaints?.total ?? 0) - (backendData.complaints?.closed ?? backendData.complaints?.resolved ?? 0),
               inactive: backendData.complaints?.inactive ?? (backendData.complaints?.closed ?? backendData.complaints?.resolved ?? 0),
+              // Add calculated overdue count
+              overdue: overdueCount,
             },
             users: {
               total: backendData.users?.total ?? 0,
@@ -117,7 +136,7 @@ export function StatsCards() {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 6 }).map((_, index) => (
+        {Array.from({ length: 7 }).map((_, index) => (
           <Card key={index} className="border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
@@ -192,6 +211,13 @@ export function StatsCards() {
       description: 'Priority resolution needed',
       icon: Users,
       color: 'text-warning'
+    },
+    {
+      title: 'Overdue',
+      value: (complaintsStats.overdue ?? 0).toString(),
+      description: 'Over 7 days old',
+      icon: AlertTriangle,
+      color: 'text-destructive'
     }
   ];
 

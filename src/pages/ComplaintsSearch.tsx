@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { CalendarIcon, Search, Filter, MapPin, User, Zap, Loader2, Eye } from 'lucide-react';
+import { CalendarIcon, Search, Filter, MapPin, User, Zap, Loader2, Eye, AlertTriangle } from 'lucide-react';
 import { STATUS_CONFIG, PRIORITY_CONFIG, COMPLAINT_CATEGORIES } from '@/types/complaint';
 import { ETHIOPIAN_REGIONS } from '@/types/user';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,6 +29,19 @@ import { cn } from '@/lib/utils';
 
 export function ComplaintsSearch() {
   const { canAccessRegion } = useAuth();
+
+  // Helper function to check if a complaint is overdue (older than 7 days and not resolved/closed)
+  const isComplaintOverdue = (complaint: any) => {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+    const createdAt = new Date(complaint.createdAt);
+    const status = complaint.status?.toLowerCase();
+    
+    return createdAt < sevenDaysAgo && 
+           status !== 'resolved' && 
+           status !== 'closed' && 
+           status !== 'cancelled';
+  };
   const [searchFilters, setSearchFilters] = useState({
     keyword: '',
     complaintId: '',
@@ -393,7 +406,15 @@ export function ComplaintsSearch() {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center space-x-3">
                         <h4 className="font-medium text-foreground">{complaint.title}</h4>
-                        <Badge variant="outline">{complaint.id}</Badge>
+                        <div className="flex items-center space-x-1">
+                          <Badge variant="outline">{complaint.id}</Badge>
+                          {isComplaintOverdue(complaint) && (
+                            <AlertTriangle 
+                              className="h-4 w-4 text-destructive" 
+                              title="Overdue - Created more than 7 days ago"
+                            />
+                          )}
+                        </div>
                         <Badge 
                           className={PRIORITY_CONFIG[complaint.priority] ? 
                             `${PRIORITY_CONFIG[complaint.priority].bgColor} ${PRIORITY_CONFIG[complaint.priority].color}` : 
