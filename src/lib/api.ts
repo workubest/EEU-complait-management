@@ -47,6 +47,11 @@ class ApiService {
     console.log('🚀 API Service initialized');
     console.log('📡 Backend URL:', this.baseUrl);
     console.log('🔧 Production mode:', this.isProduction);
+    console.log('🎭 Demo mode:', this.isDemoMode);
+    console.log('🌍 Environment variables:', {
+      VITE_FORCE_DEMO_MODE: import.meta.env.VITE_FORCE_DEMO_MODE,
+      VITE_FORCE_REAL_BACKEND: import.meta.env.VITE_FORCE_REAL_BACKEND
+    });
   }
 
   private async makeRequest<T>(
@@ -681,6 +686,9 @@ class ApiService {
 
   // Authentication
   async login(credentials: LoginRequest): Promise<LoginResponse> {
+    console.log('🔐 Attempting login for:', credentials.email);
+    console.log('🎭 Demo mode active:', this.isDemoMode);
+    
     const response = await this.makeRequest('?action=login', {
       method: 'POST',
       body: JSON.stringify({
@@ -689,6 +697,8 @@ class ApiService {
         password: credentials.password
       })
     });
+    
+    console.log('📥 Login response received:', response);
     
     // Transform backend login response format to match frontend expectations
     if (response.success && response.user && !response.data) {
@@ -702,6 +712,16 @@ class ApiService {
           token: response.token || 'backend-token-' + Date.now()
         },
         message: response.message || 'Login successful'
+      };
+    }
+    
+    // Enhanced error handling
+    if (!response.success) {
+      console.error('❌ Login failed:', response.error || response.message);
+      return {
+        success: false,
+        error: response.error || response.message || 'Login failed',
+        message: response.message || 'Invalid credentials or server error'
       };
     }
     
