@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Info } from 'lucide-react';
 import { apiService } from '@/lib/api';
+import { environment } from '@/config/environment';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -28,21 +30,50 @@ export function Login() {
     try {
       // Call the Google Apps Script backend for authentication
       const response = await apiService.login({ email, password });
+      
+      console.log('🔍 Login component received response:', response);
+      console.log('🔍 Response analysis:', {
+        success: response.success,
+        hasData: !!response.data,
+        hasDataUser: !!(response.data && response.data.user),
+        hasUser: !!response.user,
+        dataKeys: response.data ? Object.keys(response.data) : [],
+        responseKeys: Object.keys(response)
+      });
 
-      if (response.success && response.user) {
-        // Map the response user data to our User interface
+      if (response.success) {
+        // Get user data from the response - API service should have transformed it
+        let user = null;
+        
+        if (response.data?.user) {
+          user = response.data.user;
+          console.log('✅ Using response.data.user');
+        } else if (response.user) {
+          user = response.user;
+          console.log('✅ Using response.user');
+        } else {
+          console.error('❌ No user data found in successful response');
+          throw new Error('No user data in login response');
+        }
+        
+        console.log('👤 User data received:', user);
+        
+        // The API service should have already transformed the data, so use it directly
+        // But add fallback for compatibility
         const userData = {
-          id: response.user.ID || response.user.id || '',
-          name: response.user.Name || response.user.name || '',
-          email: response.user.Email || response.user.email || '',
-          role: response.user.Role || response.user.role || 'technician',
-          region: response.user.Region || response.user.region || '',
-          department: response.user.Department || response.user.department || '',
-          phone: response.user.Phone || response.user.phone || '',
-          isActive: response.user['Is Active'] || response.user.isActive || true,
-          createdAt: response.user['Created At'] || response.user.createdAt || new Date().toISOString(),
+          id: user.id || user.ID || '',
+          name: user.name || user.Name || '',
+          email: user.email || user.Email || '',
+          role: user.role || user.Role || 'technician',
+          region: user.region || user.Region || '',
+          department: user.department || user.Department || '',
+          phone: user.phone || user.Phone || '',
+          isActive: user.isActive !== undefined ? user.isActive : (user['Is Active'] !== undefined ? user['Is Active'] : true),
+          createdAt: user.createdAt || user['Created At'] || new Date().toISOString(),
         };
 
+        console.log('✅ Final user data for login:', userData);
+        
         login(userData);
         toast({
           title: t("login.success"),
@@ -50,7 +81,8 @@ export function Login() {
         });
         navigate('/');
       } else {
-        throw new Error(response.error || 'Invalid credentials');
+        console.error('❌ Login failed - response.success is false');
+        throw new Error(response.error || response.message || 'Invalid credentials');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -178,6 +210,19 @@ export function Login() {
                 )}
               </Button>
             </form>
+
+            {/* Backend Status Notice */}
+            <Alert className="mt-4">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Backend Status:</strong> 
+                {environment.isDevelopment && !environment.forceRealBackend ? (
+                  <span> Running in demo mode with mock data to avoid CORS issues during development. Any email/password combination will work.</span>
+                ) : (
+                  <span> Connected to Google Apps Script backend. If the backend is unavailable, the app will automatically fall back to demo mode.</span>
+                )}
+              </AlertDescription>
+            </Alert>
 
             {/* Demo Credentials */}
             <div className="mt-8 pt-6 border-t border-border">

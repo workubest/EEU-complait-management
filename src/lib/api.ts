@@ -699,33 +699,60 @@ class ApiService {
     });
     
     console.log('📥 Login response received:', response);
+    console.log('📊 Response structure analysis:', {
+      success: response.success,
+      hasUser: !!response.user,
+      hasData: !!response.data,
+      hasDataUser: !!(response.data && response.data.user),
+      keys: Object.keys(response)
+    });
     
-    // Transform backend login response format to match frontend expectations
-    if (response.success && response.user && !response.data) {
-      // Backend returns { success: true, user: {...} }
-      // Frontend expects { success: true, data: { user: {...} } }
-      const transformedUser = this.transformUserData(response.user);
+    // Handle successful login response
+    if (response.success) {
+      let user = null;
+      let token = null;
+      
+      // Check different response formats
+      if (response.data && response.data.user) {
+        // Format: { success: true, data: { user: {...}, token: "..." } }
+        user = response.data.user;
+        token = response.data.token;
+        console.log('✅ Using data.user format');
+      } else if (response.user) {
+        // Format: { success: true, user: {...}, token: "..." }
+        user = response.user;
+        token = response.token;
+        console.log('✅ Using direct user format');
+      } else {
+        console.error('❌ No user data found in successful response');
+        return {
+          success: false,
+          error: 'No user data in response',
+          message: 'Login response missing user information'
+        };
+      }
+      
+      // Transform user data and return consistent format
+      const transformedUser = this.transformUserData(user);
+      console.log('✅ Login successful, transformed user:', transformedUser);
+      
       return {
         success: true,
         data: {
           user: transformedUser,
-          token: response.token || 'backend-token-' + Date.now()
+          token: token || 'backend-token-' + Date.now()
         },
         message: response.message || 'Login successful'
       };
     }
     
-    // Enhanced error handling
-    if (!response.success) {
-      console.error('❌ Login failed:', response.error || response.message);
-      return {
-        success: false,
-        error: response.error || response.message || 'Login failed',
-        message: response.message || 'Invalid credentials or server error'
-      };
-    }
-    
-    return response;
+    // Handle failed login
+    console.error('❌ Login failed:', response.error || response.message);
+    return {
+      success: false,
+      error: response.error || response.message || 'Login failed',
+      message: response.message || 'Invalid credentials or server error'
+    };
   }
 
   // Health check
