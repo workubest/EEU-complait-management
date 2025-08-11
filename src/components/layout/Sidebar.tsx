@@ -6,44 +6,56 @@ import {
   Settings, 
   Home,
   Search,
-  Bell
+  Bell,
+  Download,
+  Shield
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { PermissionGate, RoleGate } from '@/components/ui/permission-gate';
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home, requiresAuth: false },
-  { name: 'New Complaint', href: '/complaints/new', icon: Plus, requiresAuth: false },
-  { name: 'All Complaints', href: '/complaints', icon: FileText, requiresAuth: false },
-  { name: 'Search Complaints', href: '/complaints/search', icon: Search, requiresAuth: false },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3, resource: 'reports', action: 'read' },
-  { name: 'User Management', href: '/users', icon: Users, resource: 'users', action: 'read' },
-  { name: 'Notifications', href: '/notifications', icon: Bell, requiresAuth: false },
-  { name: 'Settings', href: '/settings', icon: Settings, resource: 'settings', action: 'read' },
+const getNavigation = (t: (key: string) => string) => [
+  { name: t('nav.dashboard'), href: '/dashboard', icon: Home, requiresAuth: false },
+  { name: t('nav.new_complaint'), href: '/dashboard/complaints/new', icon: Plus, requiresAuth: false },
+  { name: t('nav.complaint_list'), href: '/dashboard/complaints', icon: FileText, requiresAuth: false },
+  { name: t('nav.search_complaints'), href: '/dashboard/complaints/search', icon: Search, requiresAuth: false },
+  { name: t('nav.analytics'), href: '/dashboard/analytics', icon: BarChart3, resource: 'reports', action: 'read' },
+  { name: t('nav.reports'), href: '/dashboard/reports', icon: Download, resource: 'reports', action: 'read' },
+  { name: t('nav.users'), href: '/dashboard/users', icon: Users, resource: 'users', action: 'read' },
+  { name: t('nav.notifications'), href: '/dashboard/notifications', icon: Bell, requiresAuth: false },
+  { name: t('nav.settings'), href: '/dashboard/settings', icon: Settings, resource: 'settings', action: 'read' },
+  { name: t('nav.permissions'), href: '/dashboard/permissions', icon: Shield, resource: 'settings', action: 'update' },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  onItemClick?: () => void;
+}
+
+export function Sidebar({ onItemClick }: SidebarProps) {
   const location = useLocation();
   const { role } = useAuth();
+  const { t } = useLanguage();
+  
+  const navigation = getNavigation(t);
 
   const isActive = (href: string) => {
-    if (href === '/') {
-      return location.pathname === '/';
+    if (href === '/dashboard') {
+      return location.pathname === '/dashboard' || location.pathname === '/dashboard/';
     }
     return location.pathname.startsWith(href);
   };
 
   const getDashboardTitle = () => {
-    const titles = {
-      admin: 'System Administration Dashboard',
-      manager: 'Regional Management Dashboard',
-      foreman: 'Field Operations Dashboard',
-      'call-attendant': 'Customer Service Dashboard',
-      technician: 'Technician Dashboard'
+    const titleKeys = {
+      admin: 'dashboard.admin_title',
+      manager: 'dashboard.manager_title',
+      foreman: 'dashboard.foreman_title',
+      'call-attendant': 'dashboard.call_attendant_title',
+      technician: 'dashboard.technician_title'
     };
-    return titles[role];
+    return t(titleKeys[role]);
   };
 
   return (
@@ -53,7 +65,7 @@ export function Sidebar() {
           {getDashboardTitle()}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Role: {role.charAt(0).toUpperCase() + role.slice(1)}
+          {t('common.role')}: {t(`role.${role.replace('-', '_')}_display`)}
         </p>
       </div>
 
@@ -68,6 +80,7 @@ export function Sidebar() {
               >
                 <NavLink
                   to={item.href}
+                  onClick={onItemClick}
                   className={cn(
                     'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
                     isActive(item.href)
@@ -91,6 +104,7 @@ export function Sidebar() {
             <NavLink
               key={item.name}
               to={item.href}
+              onClick={onItemClick}
               className={cn(
                 'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
                 isActive(item.href)

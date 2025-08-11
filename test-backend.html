@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Backend Connection Test</h1>
+        <p>Test connection to Google Apps Script backend:</p>
+        <p><strong>URL:</strong> <code>https://script.google.com/macros/s/AKfycbwB13dJpn1d_3Xin2-FtpdpMNmVvMSpmfdxeijSnGEmRM5mRQxMJK-dy6TXmsR9ExM/exec</code></p>
+
+        <div class="test-section">
+            <h3>🔍 Health Check Test</h3>
+            <button onclick="testHealthCheck()">Test Health Check</button>
+            <div id="healthResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Login Test</h3>
+            <button onclick="testLogin()">Test Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Dashboard Data Test</h3>
+            <button onclick="testDashboard()">Test Dashboard Data</button>
+            <div id="dashboardResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Complaints Test</h3>
+            <button onclick="testComplaints()">Test Get Complaints</button>
+            <div id="complaintsResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwB13dJpn1d_3Xin2-FtpdpMNmVvMSpmfdxeijSnGEmRM5mRQxMJK-dy6TXmsR9ExM/exec';
+
+        async function makeRequest(data) {
+            try {
+                console.log('Making request with data:', data);
+                
+                // Convert data to URL parameters for Google Apps Script
+                const params = new URLSearchParams();
+                Object.keys(data).forEach(key => {
+                    params.append(key, data[key]);
+                });
+                
+                const url = `${BACKEND_URL}?${params.toString()}`;
+                console.log('Request URL:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Response data:', result);
+                return result;
+            } catch (error) {
+                console.error('Request failed:', error);
+                throw error;
+            }
+        }
+
+        function showResult(elementId, result, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = `test-section ${isError ? 'error' : 'success'}`;
+            element.innerHTML = `
+                <h4>${isError ? '❌ Error' : '✅ Success'}</h4>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.className = 'test-section loading';
+            element.innerHTML = '<h4>⏳ Loading...</h4>';
+        }
+
+        async function testHealthCheck() {
+            showLoading('healthResult');
+            try {
+                const result = await makeRequest({ action: 'healthCheck' });
+                showResult('healthResult', result);
+            } catch (error) {
+                showResult('healthResult', { error: error.message }, true);
+            }
+        }
+
+        async function testLogin() {
+            showLoading('loginResult');
+            try {
+                const result = await makeRequest({
+                    action: 'login',
+                    email: 'admin@eeu.gov.et',
+                    password: 'admin123'
+                });
+                showResult('loginResult', result);
+            } catch (error) {
+                showResult('loginResult', { error: error.message }, true);
+            }
+        }
+
+        async function testDashboard() {
+            showLoading('dashboardResult');
+            try {
+                const result = await makeRequest({
+                    action: 'getDashboardData',
+                    role: 'admin',
+                    region: 'Addis Ababa'
+                });
+                showResult('dashboardResult', result);
+            } catch (error) {
+                showResult('dashboardResult', { error: error.message }, true);
+            }
+        }
+
+        async function testComplaints() {
+            showLoading('complaintsResult');
+            try {
+                const result = await makeRequest({ action: 'getComplaints' });
+                showResult('complaintsResult', result);
+            } catch (error) {
+                showResult('complaintsResult', { error: error.message }, true);
+            }
+        }
+
+        // Auto-run health check on page load
+        window.addEventListener('load', () => {
+            console.log('🚀 Backend Connection Test Page Loaded');
+            console.log('📡 Backend URL:', BACKEND_URL);
+        });
+    </script>
+</body>
+</html>

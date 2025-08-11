@@ -14,7 +14,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:proxy": "node test-netlify-proxy.js",
-    "test:proxy:prod": "node test-netlify-proxy.js https://your-site.netlify.app/.netlify/functions/proxy"
+    "test:proxy:prod": "node test-netlify-proxy.js https://your-site.netlify.app/.netlify/functions/proxy",
+    "test:live-data": "node test-live-data.js",
+    "migrate:data": "node migrate-mock-to-sheets.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -55,6 +57,7 @@
     "express": "^5.1.0",
     "http-proxy-middleware": "^3.0.5",
     "input-otp": "^1.2.4",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "node-fetch": "^2.7.0",

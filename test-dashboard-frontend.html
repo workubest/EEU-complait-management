@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Data Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Dashboard Data Fetching Test</h1>
+        <p>This test verifies that the dashboard can fetch data from the Google Apps Script backend.</p>
+        
+        <div class="test-section">
+            <h2>🔧 Configuration</h2>
+            <p><strong>Google Apps Script URL:</strong></p>
+            <pre id="gas-url">Loading...</pre>
+            <button onclick="testConnection()">Test Connection</button>
+        </div>
+
+        <div id="connection-test" class="test-section loading">
+            <h2>🌐 Connection Test</h2>
+            <p id="connection-status">Testing connection...</p>
+            <pre id="connection-result"></pre>
+        </div>
+
+        <div id="dashboard-test" class="test-section loading">
+            <h2>📊 Dashboard Data Test</h2>
+            <p id="dashboard-status">Testing dashboard data...</p>
+            <pre id="dashboard-result"></pre>
+        </div>
+
+        <div id="stats-display" class="test-section" style="display: none;">
+            <h2>📈 Dashboard Statistics</h2>
+            <div class="stats-grid" id="stats-grid"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Actions</h2>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+            <button onclick="window.open('http://localhost:8084', '_blank')">Open Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRtSTJjIA9_Hx-SpX95dJ2hRg1SSkEGLlyqjWElWJoiGQWtLzt7pwYeyeycah7KpI/exec';
+        
+        // Display the URL
+        document.getElementById('gas-url').textContent = GOOGLE_APPS_SCRIPT_URL;
+
+        async function testConnection() {
+            const statusEl = document.getElementById('connection-status');
+            const resultEl = document.getElementById('connection-result');
+            const sectionEl = document.getElementById('connection-test');
+            
+            statusEl.textContent = 'Testing connection...';
+            sectionEl.className = 'test-section loading';
+            
+            try {
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'healthCheck'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.textContent = '✅ Connection successful!';
+                    sectionEl.className = 'test-section success';
+                } else {
+                    statusEl.textContent = '❌ Connection failed';
+                    sectionEl.className = 'test-section error';
+                }
+                
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                statusEl.textContent = '❌ Connection error: ' + error.message;
+                sectionEl.className = 'test-section error';
+                resultEl.textContent = error.toString();
+            }
+        }
+
+        async function testDashboardData() {
+            const statusEl = document.getElementById('dashboard-status');
+            const resultEl = document.getElementById('dashboard-result');
+            const sectionEl = document.getElementById('dashboard-test');
+            const statsEl = document.getElementById('stats-display');
+            const statsGridEl = document.getElementById('stats-grid');
+            
+            statusEl.textContent = 'Testing dashboard data...';
+            sectionEl.className = 'test-section loading';
+            
+            try {
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'getDashboardStats'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    statusEl.textContent = '✅ Dashboard data loaded successfully!';
+                    sectionEl.className = 'test-section success';
+                    
+                    // Display stats
+                    statsEl.style.display = 'block';
+                    statsGridEl.innerHTML = '';
+                    
+                    const stats = [
+                        { label: 'Total Complaints', value: data.data.totalComplaints || 0 },
+                        { label: 'Open Complaints', value: data.data.openComplaints || 0 },
+                        { label: 'In Progress', value: data.data.inProgressComplaints || 0 },
+                        { label: 'Resolved', value: data.data.resolvedComplaints || 0 },
+                        { label: 'Total Users', value: data.data.totalUsers || 0 },
+                        { label: 'Active Users', value: data.data.activeUsers || 0 },
+                        { label: 'Resolution Rate', value: (data.data.performance?.resolutionRate || 0) + '%' },
+                        { label: 'Customer Satisfaction', value: (data.data.performance?.customerSatisfaction || 0) + '/5' }
+                    ];
+                    
+                    stats.forEach(stat => {
+                        const card = document.createElement('div');
+                        card.className = 'stat-card';
+                        card.innerHTML = `
+                            <div class="stat-value">${stat.value}</div>
+                            <div class="stat-label">${stat.label}</div>
+                        `;
+                        statsGridEl.appendChild(card);
+                    });
+                    
+                } else {
+                    statusEl.textContent = '❌ Dashboard data failed to load';
+                    sectionEl.className = 'test-section error';
+                }
+                
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                statusEl.textContent = '❌ Dashboard data error: ' + error.message;
+                sectionEl.className = 'test-section error';
+                resultEl.textContent = error.toString();
+            }
+        }
+
+        async function runAllTests() {
+            await testConnection();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+            await testDashboardData();
+        }
+
+        function clearResults() {
+            document.getElementById('connection-result').textContent = '';
+            document.getElementById('dashboard-result').textContent = '';
+            document.getElementById('stats-display').style.display = 'none';
+            
+            document.getElementById('connection-test').className = 'test-section loading';
+            document.getElementById('dashboard-test').className = 'test-section loading';
+            
+            document.getElementById('connection-status').textContent = 'Ready to test...';
+            document.getElementById('dashboard-status').textContent = 'Ready to test...';
+        }
+
+        // Run tests automatically on page load
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -4,6 +4,25 @@ A comprehensive complaint management system built for Ethiopian Electric Utility
 
 **System Designed by:** WORKU MESAFINT ADDIS [504530]
 
+## 📚 Complete Documentation
+
+**All documentation has been organized in the [`documentation/`](documentation/) folder:**
+
+- **📄 PDF Export**: [`documentation/pdf-export/`](documentation/pdf-export/) - Complete PDF export functionality with 4 complaints per page
+- **🔧 Components**: [`documentation/components/`](documentation/components/) - Component API documentation  
+- **📄 Pages**: [`documentation/pages/`](documentation/pages/) - Dashboard and page-specific documentation
+- **🔧 Backend**: [`documentation/backend/`](documentation/backend/) - API integration and backend setup
+- **🚀 Deployment**: [`documentation/deployment/`](documentation/deployment/) - Deployment guides and configurations
+- **⭐ Features**: [`documentation/features/`](documentation/features/) - Authentication, user management, and feature fixes
+- **🛠️ Troubleshooting**: [`documentation/troubleshooting/`](documentation/troubleshooting/) - Issue resolution guides
+- **📋 Complete Index**: [`documentation/INDEX.md`](documentation/INDEX.md) - Full documentation index
+
+### 🚀 Quick Access Links
+- **Test PDF Export**: http://localhost:8081/pdf-test (8 complaints → 2 pages)
+- **Diagnostic Tools**: http://localhost:8081/pdf-diagnostic (troubleshooting)
+- **PDF Issues Help**: [`documentation/troubleshooting/pdf-issues.md`](documentation/troubleshooting/pdf-issues.md)
+- **Browser Compatibility**: [`documentation/troubleshooting/browser-compatibility.md`](documentation/troubleshooting/browser-compatibility.md)
+
 ## Project Overview
 
 This application provides a complete solution for managing customer complaints with features including:

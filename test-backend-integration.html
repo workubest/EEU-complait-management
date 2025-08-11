@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Backend Integration Test</h1>
+        <p>This page tests the integration between the frontend and Google Apps Script backend.</p>
+        
+        <div class="test-section">
+            <h3>📋 Configuration</h3>
+            <div class="form-group">
+                <label for="backendUrl">Backend URL:</label>
+                <input type="url" id="backendUrl" value="https://script.google.com/macros/s/AKfycbwRtSTJjIA9_Hx-SpX95dJ2hRg1SSkEGLlyqjWElWJoiGQWtLzt7pwYeyeycah7KpI/exec">
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🏥 Health Check</h3>
+            <button onclick="testHealthCheck()">Test Health Check</button>
+            <div id="healthResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Authentication Test</h3>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" value="admin@eeu.gov.et">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="admin123">
+            </div>
+            <button onclick="testLogin()">Test Login</button>
+            <div id="loginResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Complaint Creation Test</h3>
+            <div class="form-group">
+                <label for="customerName">Customer Name:</label>
+                <input type="text" id="customerName" value="Test Customer">
+            </div>
+            <div class="form-group">
+                <label for="customerEmail">Customer Email:</label>
+                <input type="email" id="customerEmail" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="customerPhone">Customer Phone:</label>
+                <input type="tel" id="customerPhone" value="+251-911-123456">
+            </div>
+            <div class="form-group">
+                <label for="customerAddress">Customer Address:</label>
+                <input type="text" id="customerAddress" value="Test Address, Addis Ababa">
+            </div>
+            <div class="form-group">
+                <label for="region">Region:</label>
+                <select id="region">
+                    <option value="Addis Ababa">Addis Ababa</option>
+                    <option value="Oromia">Oromia</option>
+                    <option value="Amhara">Amhara</option>
+                    <option value="Tigray">Tigray</option>
+                    <option value="SNNP">SNNP</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="complaintTitle">Complaint Title:</label>
+                <input type="text" id="complaintTitle" value="Test Complaint - Power Outage">
+            </div>
+            <div class="form-group">
+                <label for="complaintDescription">Description:</label>
+                <textarea id="complaintDescription">This is a test complaint for power outage in our area. The power has been out for several hours.</textarea>
+            </div>
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select id="category">
+                    <option value="power-outage">Power Outage</option>
+                    <option value="billing">Billing Issue</option>
+                    <option value="technical">Technical Problem</option>
+                    <option value="service">Service Request</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="priority">Priority:</label>
+                <select id="priority">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                </select>
+            </div>
+            <button onclick="testCreateComplaint()">Create Test Complaint</button>
+            <div id="complaintResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Data Retrieval Tests</h3>
+            <button onclick="testGetComplaints()">Get Complaints</button>
+            <button onclick="testGetUsers()">Get Users</button>
+            <button onclick="testGetDashboardStats()">Get Dashboard Stats</button>
+            <div id="dataResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔄 Run All Tests</h3>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <div id="allTestsResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function getBackendUrl() {
+            return document.getElementById('backendUrl').value;
+        }
+
+        function showResult(elementId, result, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.textContent = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+        }
+
+        async function testHealthCheck() {
+            try {
+                const response = await fetch(`${getBackendUrl()}?action=healthCheck`);
+                const data = await response.json();
+                showResult('healthResult', data, data.success);
+            } catch (error) {
+                showResult('healthResult', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                const response = await fetch(getBackendUrl(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('loginResult', data, data.success);
+            } catch (error) {
+                showResult('loginResult', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testCreateComplaint() {
+            try {
+                const complaintData = {
+                    action: 'createComplaint',
+                    customer: {
+                        name: document.getElementById('customerName').value,
+                        email: document.getElementById('customerEmail').value,
+                        phone: document.getElementById('customerPhone').value,
+                        address: document.getElementById('customerAddress').value,
+                        region: document.getElementById('region').value
+                    },
+                    title: document.getElementById('complaintTitle').value,
+                    description: document.getElementById('complaintDescription').value,
+                    category: document.getElementById('category').value,
+                    priority: document.getElementById('priority').value,
+                    createdBy: 'test-user'
+                };
+                
+                const response = await fetch(getBackendUrl(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: JSON.stringify(complaintData)
+                });
+                
+                const data = await response.json();
+                showResult('complaintResult', data, data.success);
+            } catch (error) {
+                showResult('complaintResult', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testGetComplaints() {
+            try {
+                const response = await fetch(`${getBackendUrl()}?action=getComplaints`);
+                const data = await response.json();
+                showResult('dataResult', {
+                    success: data.success,
+                    totalComplaints: data.data?.length || 0,
+                    sampleComplaint: data.data?.[0] || null
+                }, data.success);
+            } catch (error) {
+                showResult('dataResult', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testGetUsers() {
+            try {
+                const response = await fetch(`${getBackendUrl()}?action=getUsers`);
+                const data = await response.json();
+                showResult('dataResult', {
+                    success: data.success,
+                    totalUsers: data.data?.length || 0,
+                    sampleUser: data.data?.[0] || null
+                }, data.success);
+            } catch (error) {
+                showResult('dataResult', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function testGetDashboardStats() {
+            try {
+                const response = await fetch(`${getBackendUrl()}?action=getDashboardStats`);
+                const data = await response.json();
+                showResult('dataResult', data, data.success);
+            } catch (error) {
+                showResult('dataResult', `Error: ${error.message}`, false);
+            }
+        }
+
+        async function runAllTests() {
+            const results = [];
+            
+            try {
+                // Health Check
+                results.push('🏥 Testing Health Check...');
+                const healthResponse = await fetch(`${getBackendUrl()}?action=healthCheck`);
+                const healthData = await healthResponse.json();
+                results.push(`Health Check: ${healthData.success ? '✅ PASS' : '❌ FAIL'}`);
+                
+                // Login Test
+                results.push('\n🔐 Testing Login...');
+                const loginResponse = await fetch(getBackendUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: 'admin@eeu.gov.et',
+                        password: 'admin123'
+                    })
+                });
+                const loginData = await loginResponse.json();
+                results.push(`Login Test: ${loginData.success ? '✅ PASS' : '❌ FAIL'}`);
+                
+                // Create Complaint Test
+                results.push('\n📝 Testing Complaint Creation...');
+                const complaintResponse = await fetch(getBackendUrl(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'createComplaint',
+                        customer: {
+                            name: 'Test Customer',
+                            email: 'test@example.com',
+                            phone: '+251-911-123456',
+                            address: 'Test Address',
+                            region: 'Addis Ababa'
+                        },
+                        title: 'Test Complaint',
+                        description: 'Test description',
+                        category: 'power-outage',
+                        priority: 'medium',
+                        createdBy: 'test-user'
+                    })
+                });
+                const complaintData = await complaintResponse.json();
+                results.push(`Complaint Creation: ${complaintData.success ? '✅ PASS' : '❌ FAIL'}`);
+                
+                // Get Data Tests
+                results.push('\n📊 Testing Data Retrieval...');
+                const complaintsResponse = await fetch(`${getBackendUrl()}?action=getComplaints`);
+                const complaintsData = await complaintsResponse.json();
+                results.push(`Get Complaints: ${complaintsData.success ? '✅ PASS' : '❌ FAIL'}`);
+                
+                const statsResponse = await fetch(`${getBackendUrl()}?action=getDashboardStats`);
+                const statsData = await statsResponse.json();
+                results.push(`Dashboard Stats: ${statsData.success ? '✅ PASS' : '❌ FAIL'}`);
+                
+                results.push('\n🎉 All tests completed!');
+                showResult('allTestsResult', results.join('\n'), true);
+                
+            } catch (error) {
+                results.push(`\n❌ Test suite failed: ${error.message}`);
+                showResult('allTestsResult', results.join('\n'), false);
+            }
+        }
+
+        // Auto-run health check on page load
+        window.addEventListener('load', () => {
+            setTimeout(testHealthCheck, 1000);
+        });
+    </script>
+</body>
+</html>

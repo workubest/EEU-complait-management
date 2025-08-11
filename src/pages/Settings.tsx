@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -162,7 +162,10 @@ export function Settings() {
         // Fetch settings
         const settingsResult = await apiService.getSettings();
         if (settingsResult.success && settingsResult.data) {
-          setSettings(settingsResult.data);
+          setSettings(prevSettings => ({
+            ...prevSettings,
+            ...settingsResult.data
+          }));
         }
 
         // Fetch permission matrix
@@ -333,7 +336,7 @@ export function Settings() {
   };
 
   const validateSettings = (): boolean => {
-    if (!settings.companyName.trim()) {
+    if (!settings.companyName?.trim()) {
       toast({
         title: "Validation Error",
         description: "Company name is required.",
@@ -342,7 +345,7 @@ export function Settings() {
       return false;
     }
 
-    if (!settings.supportEmail.trim() || !settings.supportEmail.includes('@')) {
+    if (!settings.supportEmail?.trim() || !settings.supportEmail?.includes('@')) {
       toast({
         title: "Validation Error",
         description: "Please enter a valid support email address.",
@@ -351,7 +354,7 @@ export function Settings() {
       return false;
     }
 
-    if (!settings.supportPhone.trim()) {
+    if (!settings.supportPhone?.trim()) {
       toast({
         title: "Validation Error",
         description: "Support phone number is required.",
@@ -585,6 +588,20 @@ export function Settings() {
     );
   }
 
+  // Safety check to ensure settings are properly initialized
+  if (!settings || typeof settings !== 'object') {
+    console.error('Settings not properly initialized:', settings);
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">Settings Error</h3>
+          <p className="text-muted-foreground">Settings could not be loaded properly. Please refresh the page.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between animate-fade-in">
@@ -648,10 +665,10 @@ export function Settings() {
                   </Label>
                   <Input
                     id="companyName"
-                    value={settings.companyName}
+                    value={settings.companyName || ''}
                     onChange={(e) => handleSettingChange('companyName', e.target.value)}
                     disabled={!permissions.settings.update}
-                    className={!settings.companyName.trim() ? 'border-destructive' : ''}
+                    className={!settings.companyName?.trim() ? 'border-destructive' : ''}
                   />
                 </div>
                 <div className="space-y-2">
@@ -661,10 +678,10 @@ export function Settings() {
                   <Input
                     id="supportEmail"
                     type="email"
-                    value={settings.supportEmail}
+                    value={settings.supportEmail || ''}
                     onChange={(e) => handleSettingChange('supportEmail', e.target.value)}
                     disabled={!permissions.settings.update}
-                    className={!settings.supportEmail.includes('@') ? 'border-destructive' : ''}
+                    className={!settings.supportEmail?.includes('@') ? 'border-destructive' : ''}
                   />
                 </div>
               </div>
@@ -676,10 +693,10 @@ export function Settings() {
                   </Label>
                   <Input
                     id="supportPhone"
-                    value={settings.supportPhone}
+                    value={settings.supportPhone || ''}
                     onChange={(e) => handleSettingChange('supportPhone', e.target.value)}
                     disabled={!permissions.settings.update}
-                    className={!settings.supportPhone.trim() ? 'border-destructive' : ''}
+                    className={!settings.supportPhone?.trim() ? 'border-destructive' : ''}
                     placeholder="+251-XX-XXX-XXXX"
                   />
                 </div>
@@ -688,14 +705,14 @@ export function Settings() {
                   <div className="flex items-center space-x-2">
                     <Input
                       type="time"
-                      value={settings.workingHours.start}
+                      value={settings.workingHours?.start || '08:00'}
                       onChange={(e) => handleWorkingHoursChange('start', e.target.value)}
                       disabled={!permissions.settings.update}
                     />
                     <span className="text-muted-foreground">to</span>
                     <Input
                       type="time"
-                      value={settings.workingHours.end}
+                      value={settings.workingHours?.end || '17:00'}
                       onChange={(e) => handleWorkingHoursChange('end', e.target.value)}
                       disabled={!permissions.settings.update}
                     />
@@ -707,7 +724,7 @@ export function Settings() {
                 <Label htmlFor="address">Address</Label>
                 <Textarea
                   id="address"
-                  value={settings.address}
+                  value={settings.address || ''}
                   onChange={(e) => handleSettingChange('address', e.target.value)}
                   disabled={!permissions.settings.update}
                 />
@@ -1112,3 +1129,4 @@ export function Settings() {
     </div>
   );
 }
+

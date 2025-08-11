@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 
 // Google Apps Script URL - configurable via environment variable
 const GOOGLE_APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL || 
-  'https://script.google.com/macros/s/AKfycbwB13dJpn1d_3Xin2-FtpdpMNmVvMSpmfdxeijSnGEmRM5mRQxMJK-dy6TXmsR9ExM/exec';
+  'https://script.google.com/macros/s/AKfycbwRtSTJjIA9_Hx-SpX95dJ2hRg1SSkEGLlyqjWElWJoiGQWtLzt7pwYeyeycah7KpI/exec';
 
 exports.handler = async function(event, context) {
   console.log('🔄 Netlify Function - Proxy Request');

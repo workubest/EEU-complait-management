@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>User Management API Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Actions</h2>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="testGetUsers()">Test Get Users</button>
+        <button onclick="testFullFlow()">Test Full Flow</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        // Transform user data like the API service does
+        function transformUserData(backendUser) {
+            const role = backendUser.Role || backendUser.role || 'technician';
+            
+            return {
+                id: backendUser.ID || backendUser.id || '',
+                name: backendUser.Name || backendUser.name || '',
+                email: backendUser.Email || backendUser.email || '',
+                phone: backendUser.Phone || backendUser.phone || '',
+                role: role,
+                region: backendUser.Region || backendUser.region || '',
+                department: backendUser.Department || backendUser.department || '',
+                isActive: backendUser['Is Active'] !== undefined ? backendUser['Is Active'] : 
+                          (backendUser.isActive !== undefined ? backendUser.isActive : true),
+                lastLogin: backendUser['Last Login'] || backendUser.lastLogin || null,
+                createdAt: backendUser['Created At'] || backendUser.createdAt || new Date().toISOString(),
+                updatedAt: backendUser['Updated At'] || backendUser.updatedAt || new Date().toISOString(),
+                avatar: backendUser.Avatar || backendUser.avatar || null,
+                permissions: backendUser.permissions || getRolePermissions(role),
+                metadata: backendUser.metadata || {
+                    loginCount: 0,
+                    lastIpAddress: null,
+                    twoFactorEnabled: false,
+                    passwordLastChanged: null,
+                    accountLocked: false,
+                    failedLoginAttempts: 0
+                }
+            };
+        }
+        
+        function getRolePermissions(role) {
+            const rolePermissions = {
+                admin: {
+                    complaints: { create: true, read: true, update: true, delete: true },
+                    users: { create: true, read: true, update: true, delete: true },
+                    reports: { create: true, read: true, update: true, delete: true },
+                    analytics: { create: true, read: true, update: true, delete: true }
+                },
+                manager: {
+                    complaints: { create: true, read: true, update: true, delete: false },
+                    users: { create: false, read: true, update: true, delete: false },
+                    reports: { create: true, read: true, update: true, delete: false },
+                    analytics: { create: false, read: true, update: false, delete: false }
+                }
+            };
+            
+            return rolePermissions[role] || rolePermissions.admin;
+        }
+        
+        async function testLogin() {
+            log('<h3>Testing Login...</h3>');
+            
+            try {
+                const response = await fetch('/api?action=login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: 'admin@eeu.gov.et',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    const transformedUser = transformUserData(data.user);
+                    log(`✅ Login successful: ${transformedUser.name} (${transformedUser.role})`, 'success');
+                    log(`Users permission: ${transformedUser.permissions.users.read}`, 'info');
+                } else {
+                    log(`❌ Login failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testGetUsers() {
+            log('<h3>Testing Get Users...</h3>');
+            
+            try {
+                const response = await fetch('/api?action=getUsers');
+                const data = await response.json();
+                
+                if (data.success && data.data && Array.isArray(data.data)) {
+                    const transformedUsers = data.data.map(user => transformUserData(user));
+                    log(`✅ Users retrieved: ${transformedUsers.length} users`, 'success');
+                    log(`Sample user: ${transformedUsers[0].name} (${transformedUsers[0].email})`, 'info');
+                } else {
+                    log(`❌ Get users failed: ${data.error || 'No data'}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 Get users error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFullFlow() {
+            log('<h3>Testing Full Flow...</h3>');
+            await testLogin();
+            await testGetUsers();
+            log('<p class="success">🎉 If both tests passed, User Management should work!</p>');
+        }
+    </script>
+</body>
+</html>

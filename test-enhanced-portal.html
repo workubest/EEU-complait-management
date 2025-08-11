@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Customer Portal Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #f0fdf4 100%);
+            min-height: 100vh;
+        }
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #4CAF50;
+        }
+        .success { border-left-color: #4CAF50; }
+        .info { border-left-color: #2196F3; }
+        .warning { border-left-color: #FF8C42; }
+        .demo-accounts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .account-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .account-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .account-number {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+            margin: 10px 0;
+        }
+        .customer-name {
+            color: #374151;
+            font-size: 14px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(76, 175, 80, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>🏪 Enhanced Customer Portal Test</h1>
+    
+    <div class="test-card success">
+        <h2>🚀 Super Interactive Portal Complete!</h2>
+        <p>The Customer Portal is now incredibly interactive with:</p>
+        <ul>
+            <li>🎨 Ultra-modern design with dynamic animations</li>
+            <li>🖱️ Click effects and interactive hover states</li>
+            <li>🎭 Logo animations with floating effects</li>
+            <li>📱 Enhanced responsive design</li>
+            <li>🎯 Interactive feature cards with hover transformations</li>
+            <li>🎪 Demo account cards with personality</li>
+            <li>🚀 Floating action button with scroll detection</li>
+            <li>✨ Background particles and ambient animations</li>
+            <li>🎨 Rainbow effects and pulse animations</li>
+            <li>🎪 Interactive tooltips and feedback</li>
+        </ul>
+    </div>
+
+    <div class="test-card info">
+        <h2>🧪 Demo Account Numbers</h2>
+        <p>Use these account numbers to test the enhanced portal:</p>
+        
+        <div class="demo-accounts">
+            <div class="account-card">
+                <div class="account-number">123456789</div>
+                <div class="customer-name">አበበ ተስፋዬ<br>(Abebe Tesfaye)</div>
+            </div>
+            <div class="account-card">
+                <div class="account-number">987654321</div>
+                <div class="customer-name">ፋጢማ አህመድ<br>(Fatima Ahmed)</div>
+            </div>
+            <div class="account-card">
+                <div class="account-number">555666777</div>
+                <div class="customer-name">ዳዊት ሰለሞን<br>(Dawit Solomon)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card warning">
+        <h2>🎪 Interactive Features</h2>
+        <ul>
+            <li><strong>🎭 Clickable Logo:</strong> Click the logo for magical effects and animations</li>
+            <li><strong>🎨 Hover Transformations:</strong> Every element responds to mouse interaction</li>
+            <li><strong>🚀 Floating Button:</strong> Appears when scrolling, with smooth scroll-to-top</li>
+            <li><strong>✨ Click Effects:</strong> Visual feedback with ripple animations</li>
+            <li><strong>🎪 Demo Cards:</strong> Interactive customer cards with personality</li>
+            <li><strong>🌟 Feature Badges:</strong> Animated service indicators with hover effects</li>
+            <li><strong>🎯 Smart Tooltips:</strong> Context-aware help and guidance</li>
+            <li><strong>🎨 Background Particles:</strong> Subtle ambient animations</li>
+            <li><strong>📱 Touch Friendly:</strong> Optimized for mobile interactions</li>
+        </ul>
+    </div>
+
+    <div style="text-align: center; margin: 40px 0;">
+        <a href="http://localhost:8080/customer-portal" class="btn">
+            🚀 Open Enhanced Customer Portal
+        </a>
+    </div>
+
+    <div class="test-card info">
+        <h2>🎮 Interactive Testing Guide</h2>
+        <ol>
+            <li><strong>🎭 Logo Interaction:</strong> Click and hover over the EEU logo for magical effects</li>
+            <li><strong>🎨 Feature Badges:</strong> Hover over the service badges to see transformations</li>
+            <li><strong>🎪 Welcome Card:</strong> Hover over the welcome message for animated backgrounds</li>
+            <li><strong>🚀 Quick Access:</strong> Hover over the feature cards for 3D transformations</li>
+            <li><strong>🎯 Demo Accounts:</strong> Click the colorful demo account cards</li>
+            <li><strong>📱 Scroll Test:</strong> Scroll down to see the floating action button appear</li>
+            <li><strong>✨ Background:</strong> Notice the subtle particle animations</li>
+            <li><strong>🎨 Bottom Section:</strong> Hover over the bottom title elements</li>
+            <li><strong>📱 Mobile Test:</strong> Resize window to test responsive interactions</li>
+        </ol>
+    </div>
+
+    <script>
+        console.log('🎉 Enhanced Customer Portal test page loaded!');
+        console.log('📊 Available demo accounts:', ['123456789', '987654321', '555666777']);
+        
+        // Test if the development server is running
+        fetch('http://localhost:8080/')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ Development server is running');
+                } else {
+                    console.log('⚠️ Development server responded with status:', response.status);
+                }
+            })
+            .catch(error => {
+                console.log('❌ Development server is not accessible:', error.message);
+            });
+    </script>
+</body>
+</html>

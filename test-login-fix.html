@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Login Fix Test</h1>
+    <p>This page tests the login functionality to verify the fix is working.</p>
+    
+    <div id="results"></div>
+    
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testLogin() {
+            addResult('🧪 Starting login test...', 'info');
+            
+            const testCredentials = [
+                { email: 'admin@eeu.gov.et', password: 'admin123', role: 'Admin' },
+                { email: 'manager@eeu.gov.et', password: 'manager123', role: 'Manager' },
+                { email: 'technician@eeu.gov.et', password: 'tech123', role: 'Technician' }
+            ];
+            
+            for (const creds of testCredentials) {
+                try {
+                    addResult(`🔐 Testing ${creds.role} login...`, 'info');
+                    
+                    const response = await fetch('/api?action=login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'login',
+                            email: creds.email,
+                            password: creds.password
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        addResult(`✅ ${creds.role} login successful!<br>
+                                  User: ${data.data?.user?.name || data.user?.name || 'Unknown'}<br>
+                                  Role: ${data.data?.user?.role || data.user?.role || 'Unknown'}`, 'success');
+                    } else {
+                        addResult(`❌ ${creds.role} login failed: ${data.error}`, 'error');
+                    }
+                    
+                } catch (error) {
+                    addResult(`❌ ${creds.role} login error: ${error.message}`, 'error');
+                }
+            }
+            
+            addResult('🏁 Login test completed!', 'info');
+        }
+        
+        // Test on page load
+        window.addEventListener('load', () => {
+            addResult('📄 Page loaded. Click "Test Login" to run tests.', 'info');
+        });
+    </script>
+</body>
+</html>

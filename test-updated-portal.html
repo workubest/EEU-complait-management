@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updated Customer Portal - Live Data Ready</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #f0fdf4 100%);
+            min-height: 100vh;
+        }
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #4CAF50;
+        }
+        .success { border-left-color: #4CAF50; }
+        .info { border-left-color: #2196F3; }
+        .warning { border-left-color: #FF8C42; }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(76, 175, 80, 0.3);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+        .btn-secondary:hover {
+            box-shadow: 0 8px 16px rgba(33, 150, 243, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎉 Updated Customer Portal - Live Data Ready!</h1>
+    
+    <div class="test-card success">
+        <h2>✅ Portal Updates Complete!</h2>
+        <p>The Customer Portal has been successfully updated with your requested changes:</p>
+        <ul>
+            <li>📍 <strong>Logo Centered:</strong> EEU logo is now perfectly centered at the top</li>
+            <li>📝 <strong>Text Below Logo:</strong> Portal titles moved directly below the logo</li>
+            <li>🔍 <strong>Account Validation First:</strong> Account validation form now appears first</li>
+            <li>🚫 <strong>Demo Section Removed:</strong> Removed demo account numbers for live data</li>
+            <li>✨ <strong>All Interactive Features Preserved:</strong> Animations and effects maintained</li>
+        </ul>
+    </div>
+
+    <div class="test-card info">
+        <h2>🎯 Layout Changes Made</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Centered Logo</h3>
+                <p>EEU logo positioned at the center of the page with all interactive animations</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>Text Below Logo</h3>
+                <p>Portal titles now appear directly below the logo for better hierarchy</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Account First</h3>
+                <p>Account validation form moved to the top for immediate access</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Live Data Ready</h3>
+                <p>Demo accounts removed - portal ready for real Google Sheets data</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card warning">
+        <h2>🔗 Portal Structure</h2>
+        <p>The updated Customer Portal now follows this structure:</p>
+        <ol>
+            <li><strong>🎭 Interactive Logo:</strong> Centered with click effects and animations</li>
+            <li><strong>📝 Portal Titles:</strong> "Ethiopian Electric Utility Service Portal" and Amharic text</li>
+            <li><strong>✨ Feature Badges:</strong> 24/7 Service, Secure Portal, Mobile Friendly</li>
+            <li><strong>💬 Welcome Message:</strong> Interactive welcome card with feature preview</li>
+            <li><strong>🔍 Account Validation:</strong> Primary form for entering account numbers</li>
+            <li><strong>🎯 Quick Access Cards:</strong> Submit Complaint, Track Status, Get Support</li>
+        </ol>
+    </div>
+
+    <div class="test-card info">
+        <h2>📊 Live Data Integration</h2>
+        <p>The portal is now configured to work with your Google Sheets backend:</p>
+        <ul>
+            <li>✅ <strong>Real Customer Search:</strong> Uses live data from Google Sheets</li>
+            <li>✅ <strong>Account Validation:</strong> Validates against actual customer records</li>
+            <li>✅ <strong>Complaint Submission:</strong> Saves directly to your Google Sheets</li>
+            <li>✅ <strong>No Demo Data:</strong> Removed all demo account references</li>
+        </ul>
+    </div>
+
+    <div style="text-align: center; margin: 40px 0;">
+        <a href="http://localhost:8080/customer-portal" class="btn">
+            🚀 Open Updated Customer Portal
+        </a>
+        <a href="http://localhost:8080/" class="btn btn-secondary">
+            🏠 Back to Main Dashboard
+        </a>
+    </div>
+
+    <div class="test-card success">
+        <h2>🎮 Testing Instructions</h2>
+        <ol>
+            <li><strong>🎭 Logo Interaction:</strong> Click and hover the centered EEU logo</li>
+            <li><strong>📝 Text Layout:</strong> Notice the portal titles below the logo</li>
+            <li><strong>🔍 Account Validation:</strong> Try entering a real account number from your system</li>
+            <li><strong>✨ Interactive Elements:</strong> Hover over feature badges and cards</li>
+            <li><strong>📱 Responsive Test:</strong> Resize window to test mobile layout</li>
+            <li><strong>🚀 Floating Button:</strong> Scroll down to see the floating action button</li>
+        </ol>
+    </div>
+
+    <div class="test-card info">
+        <h2>🔧 Technical Notes</h2>
+        <ul>
+            <li><strong>API Integration:</strong> Connected to your Google Apps Script backend</li>
+            <li><strong>Customer Search:</strong> Uses getCustomers() API with client-side filtering</li>
+            <li><strong>Data Format:</strong> Handles both string and number account formats</li>
+            <li><strong>Error Handling:</strong> Graceful fallback for API failures</li>
+            <li><strong>Performance:</strong> Optimized animations and interactions</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🎉 Updated Customer Portal test page loaded!');
+        console.log('📊 Portal ready for live Google Sheets data');
+        
+        // Test if the development server is running
+        fetch('http://localhost:8080/')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ Development server is running');
+                    console.log('🔗 Customer Portal: http://localhost:8080/customer-portal');
+                } else {
+                    console.log('⚠️ Development server responded with status:', response.status);
+                }
+            })
+            .catch(error => {
+                console.log('❌ Development server is not accessible:', error.message);
+            });
+    </script>
+</body>
+</html>

@@ -14,7 +14,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { COMPLAINT_CATEGORIES, ComplaintCategory, ComplaintPriority } from '@/types/complaint';
-import { ETHIOPIAN_REGIONS } from '@/types/user';
+import { ETHIOPIAN_REGIONS, SERVICE_CENTERS } from '@/types/user';
+import { apiService } from '@/lib/api';
 
 export function ComplaintFormAmharic() {
   const { toast } = useToast();
@@ -27,6 +28,7 @@ export function ComplaintFormAmharic() {
     customerPhone: '',
     customerAddress: '',
     region: user?.region || '',
+    serviceCenter: user?.serviceCenter || '',
     meterNumber: '',
     accountNumber: '',
     title: '',
@@ -38,28 +40,76 @@ export function ComplaintFormAmharic() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({
-      title: "ቅሬታ በተሳካ ሁኔታ ተልክዋል",
-      description: `ቅሬታ መለያ: CMP-${Date.now().toString().slice(-6)} ተፈጥሯል።`,
-    });
-    setIsSubmitting(false);
+
+    try {
+      // Prepare complaint data
+      const complaintData = {
+        customer: {
+          name: formData.customerName,
+          email: formData.customerEmail,
+          phone: formData.customerPhone,
+          address: formData.customerAddress,
+          region: formData.region,
+          serviceCenter: formData.serviceCenter,
+          meterNumber: formData.meterNumber,
+          accountNumber: formData.accountNumber
+        },
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        priority: formData.priority,
+        region: formData.region,
+        serviceCenter: formData.serviceCenter,
+        createdBy: user?.id || 'anonymous'
+      };
+
+      const response = await apiService.createComplaint(complaintData);
+
+      if (response.success) {
+        toast({
+          title: "ቅሬታ በተሳካ ሁኔታ ተልክዋል",
+          description: `ቅሬታ መለያ: ${response.data?.id || 'CMP-' + Date.now().toString().slice(-6)} ተፈጥሯል።`,
+        });
+
+        // Reset form
+        setFormData({
+          customerName: '',
+          customerEmail: '',
+          customerPhone: '',
+          customerAddress: '',
+          region: user?.region || '',
+          serviceCenter: user?.serviceCenter || '',
+          meterNumber: '',
+          accountNumber: '',
+          title: '',
+          description: '',
+          category: '' as ComplaintCategory,
+          priority: 'medium' as ComplaintPriority
+        });
+      } else {
+        throw new Error(response.error || 'ቅሬታ ማስገባት አልተሳካም');
+      }
+    } catch (error) {
+      console.error('Error submitting complaint:', error);
+      toast({
+        title: "ስህተት",
+        description: error instanceof Error ? error.message : "ቅሬታ ማስገባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="animate-fade-in">
-        <h1 className="text-3xl font-bold text-foreground">አዲስ ቅሬታ</h1>
-        <p className="text-muted-foreground mt-2">
-          የኤሌክትሪክ አቅርቦት ቅሬታ ያስገቡ
-        </p>
-      </div>
-
       <form onSubmit={handleSubmit} className="animate-slide-up">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>የደንበኛ መረጃ</CardTitle>
+          <Card className="border-eeu-orange shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-white to-eeu-orange-light">
+            <CardHeader className="bg-gradient-eeu text-white rounded-t-lg">
+              <CardTitle>
+                የደንበኛ መረጃ
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -105,7 +155,7 @@ export function ComplaintFormAmharic() {
 
               <div className="space-y-2">
                 <Label>ክልል *</Label>
-                <Select value={formData.region} onValueChange={(value) => setFormData(prev => ({ ...prev, region: value }))}>
+                <Select value={formData.region} onValueChange={(value) => setFormData(prev => ({ ...prev, region: value, serviceCenter: '' }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="ክልል ይምረጡ" />
                   </SelectTrigger>
@@ -118,12 +168,34 @@ export function ComplaintFormAmharic() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label>የአገልግሎት ማዕከል *</Label>
+                <Select 
+                  value={formData.serviceCenter} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, serviceCenter: value }))}
+                  disabled={!formData.region}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={formData.region ? "የአገልግሎት ማዕከል ይምረጡ" : "መጀመሪያ ክልል ይምረጡ"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formData.region && SERVICE_CENTERS[formData.region as keyof typeof SERVICE_CENTERS]?.map((center) => (
+                      <SelectItem key={center} value={center}>
+                        {center}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>የቅሬታ ዝርዝር</CardTitle>
+          <Card className="border-eeu-green shadow-lg hover:shadow-xl transition-shadow duration-300 bg-gradient-to-br from-white to-eeu-green-light">
+            <CardHeader className="bg-gradient-eeu-reverse text-white rounded-t-lg">
+              <CardTitle>
+                የቅሬታ ዝርዝር
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -166,10 +238,17 @@ export function ComplaintFormAmharic() {
               <div className="pt-4">
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-primary hover:opacity-90"
+                  className="w-full py-4 text-lg font-semibold bg-gradient-eeu hover:opacity-90 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'እየላካል...' : 'ቅሬታ አስገባ'}
+                  {isSubmitting ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>እየላካል...</span>
+                    </div>
+                  ) : (
+                    <span>ቅሬታ አስገባ</span>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -179,3 +258,5 @@ export function ComplaintFormAmharic() {
     </div>
   );
 }
+
+export default ComplaintFormAmharic;

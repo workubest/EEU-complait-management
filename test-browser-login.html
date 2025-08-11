@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Browser Login</title>
+</head>
+<body>
+    <h1>Testing Browser Login</h1>
+    <div id="result"></div>
+    
+    <script>
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing login...';
+            
+            try {
+                console.log('🧪 Testing browser login...');
+                
+                // This is exactly what the frontend does
+                const response = await fetch('/api?action=login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: 'admin@eeu.gov.et',
+                        password: 'admin123'
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.success && data.user) {
+                    // Test the exact user mapping from Login.tsx
+                    const userData = {
+                        id: data.user.ID || data.user.id || '',
+                        name: data.user.Name || data.user.name || '',
+                        email: data.user.Email || data.user.email || '',
+                        role: data.user.Role || data.user.role || 'technician',
+                        region: data.user.Region || data.user.region || '',
+                        department: data.user.Department || data.user.department || '',
+                        phone: data.user.Phone || data.user.phone || '',
+                        isActive: data.user['Is Active'] || data.user.isActive || true,
+                        createdAt: data.user['Created At'] || data.user.createdAt || new Date().toISOString(),
+                    };
+                    
+                    resultDiv.innerHTML = `
+                        <h2>✅ LOGIN SUCCESS!</h2>
+                        <p><strong>Name:</strong> ${userData.name}</p>
+                        <p><strong>Email:</strong> ${userData.email}</p>
+                        <p><strong>Role:</strong> ${userData.role}</p>
+                        <p><strong>Department:</strong> ${userData.department}</p>
+                        <p><strong>Region:</strong> ${userData.region}</p>
+                        <p><strong>Phone:</strong> ${userData.phone}</p>
+                        <p style="color: green;">✅ No null reference errors!</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h2>❌ LOGIN FAILED</h2>
+                        <p><strong>Error:</strong> ${data.error || 'Unknown error'}</p>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                resultDiv.innerHTML = `
+                    <h2>💥 REQUEST ERROR</h2>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+            }
+        }
+        
+        // Test immediately when page loads
+        testLogin();
+    </script>
+</body>
+</html>

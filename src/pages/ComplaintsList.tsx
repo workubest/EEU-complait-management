@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,24 +22,60 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Filter, Eye, Edit, User, Calendar, Trash2, UserCheck, Plus, AlertTriangle } from 'lucide-react';
+import { Search, Filter, Eye, Edit, User, Calendar, Trash2, UserCheck, Plus, AlertTriangle, Phone, MapPin, Settings, CheckCircle, Info, SortDesc, Clock, Building } from 'lucide-react';
 // import { mockComplaints } from '@/data/mockData';
-import { STATUS_CONFIG, PRIORITY_CONFIG, Complaint } from '@/types/complaint';
+import { STATUS_CONFIG, PRIORITY_CONFIG, Complaint, ComplaintStatus, ComplaintPriority } from '@/types/complaint';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { ProtectedAction } from '@/components/auth/ProtectedRoute';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/lib/api';
 import { format } from 'date-fns';
+import { RepairOrderExportDialog } from '@/components/export/RepairOrderExportDialog';
+
+// Work types for status updates
+const WORK_TYPES = [
+  { value: 'fuse_replacement', label: 'Changing Fuse' },
+  { value: 'joint_repair', label: 'Joining Joints' },
+  { value: 'wire_jointing', label: 'Jointing Wire Cut' },
+  { value: 'cable_repair', label: 'Cable Repair' },
+  { value: 'transformer_maintenance', label: 'Transformer Maintenance' },
+  { value: 'meter_replacement', label: 'Meter Replacement' },
+  { value: 'pole_replacement', label: 'Pole Replacement' },
+  { value: 'line_extension', label: 'Line Extension' },
+  { value: 'voltage_regulation', label: 'Voltage Regulation' },
+  { value: 'insulator_replacement', label: 'Insulator Replacement' },
+  { value: 'grounding_repair', label: 'Grounding System Repair' },
+  { value: 'switch_maintenance', label: 'Switch Maintenance' },
+  { value: 'other', label: 'Other Work' }
+];
 
 const ComplaintsList: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { canAccessRegion, permissions, user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
+
+  // Ensure config objects are properly defined
+  React.useEffect(() => {
+    if (!STATUS_CONFIG || !PRIORITY_CONFIG) {
+      console.error('STATUS_CONFIG or PRIORITY_CONFIG not properly imported');
+    }
+  }, []);
 
   // Helper function to format phone numbers
   const formatPhoneNumber = (phone: any) => {
@@ -64,16 +101,46 @@ const ComplaintsList: React.FC = () => {
     return [];
   };
 
+  // Helper function to normalize priority values
+  const normalizePriority = (priority: any): ComplaintPriority => {
+    if (!priority) return 'medium';
+    const normalized = String(priority).toLowerCase().trim();
+    if (['low', 'medium', 'high', 'critical'].includes(normalized)) {
+      return normalized as ComplaintPriority;
+    }
+    return 'medium';
+  };
+
+  // Helper function to normalize status values
+  const normalizeStatus = (status: any): ComplaintStatus => {
+    if (!status) return 'open';
+    const normalized = String(status).toLowerCase().trim();
+    if (['open', 'in-progress', 'resolved', 'escalated', 'closed', 'cancelled'].includes(normalized)) {
+      return normalized as ComplaintStatus;
+    }
+    return 'open';
+  };
+
   // Helper function to map API data to UI format
-  const mapComplaintData = (item: any) => ({
+  const mapComplaintData = (item: any) => {
+    // Validate priority and status values
+    if (item.Priority && !['low', 'medium', 'high', 'critical'].includes(String(item.Priority).toLowerCase().trim())) {
+      console.warn('Invalid priority value received:', item.Priority);
+    }
+    if (item.Status && !['open', 'in-progress', 'resolved', 'escalated', 'closed', 'cancelled'].includes(String(item.Status).toLowerCase().trim())) {
+      console.warn('Invalid status value received:', item.Status);
+    }
+    
+    const mappedData = {
     id: item.ID || item.id || '',
     customerId: item['Customer ID'] || item.customerId || '1',
     title: item.Title || item.title || '',
     description: item.Description || item.description || '',
     category: item.Category || item.category || 'other',
     region: item.Region || item.region || item.Location || '',
-    priority: item.Priority || item.priority || 'medium',
-    status: item.Status || item.status || 'open',
+    serviceCenter: item['Service Center'] || item.serviceCenter || '',
+    priority: normalizePriority(item.Priority || item.priority),
+    status: normalizeStatus(item.Status || item.status),
     createdAt: item['Created At'] || item.createdAt || new Date().toISOString(),
     updatedAt: item['Updated At'] || item.updatedAt || item['Created At'] || item.createdAt || new Date().toISOString(),
     resolvedAt: item['Resolved At'] || item.resolvedAt || '',
@@ -81,6 +148,9 @@ const ComplaintsList: React.FC = () => {
     assignedTo: item['Assigned To'] || item.assignedTo || '',
     assignedBy: item['Assigned By'] || item.assignedBy || '',
     createdBy: item['Created By'] || item.createdBy || '',
+    contractNumber: item['Contract Number'] || item.contractNumber || item.customer?.contractNumber || '',
+    businessPartner: item['Business Partner'] || item.businessPartner || item.customer?.businessPartner || '',
+    repairOrder: item['Repair Order'] || item.repairOrder || item.repairOrderNumber || '',
     notes: formatNotes(item.Notes),
     attachments: item.Attachments ? (typeof item.Attachments === 'string' ? item.Attachments.split(';').map(att => att.trim()).filter(att => att) : []) : [],
     customer: {
@@ -90,10 +160,16 @@ const ComplaintsList: React.FC = () => {
       phone: formatPhoneNumber(item['Customer Phone'] || item.customerPhone || item.customer?.phone),
       address: item['Customer Address'] || item.customerAddress || item.customer?.address || item.Location || '',
       region: item.Region || item.region || item.Location || '',
+      serviceCenter: item['Service Center'] || item.serviceCenter || item.customer?.serviceCenter || '',
       meterNumber: item['Meter Number'] || item.meterNumber || item.customer?.meterNumber || '',
       accountNumber: item['Account Number'] || item.accountNumber || item.customer?.accountNumber || '',
+      contractNumber: item['Contract Number'] || item.contractNumber || item.customer?.contractNumber || '',
+      businessPartner: item['Business Partner'] || item.businessPartner || item.customer?.businessPartner || '',
     },
-  });
+  };
+  
+  return mappedData;
+};
 
   // Helper function to check if a complaint is overdue (older than 7 days and not resolved/closed)
   const isComplaintOverdue = (complaint: any) => {
@@ -107,14 +183,64 @@ const ComplaintsList: React.FC = () => {
            status !== 'closed' && 
            status !== 'cancelled';
   };
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
+  const [priorityFilter, setPriorityFilter] = useState<string>(searchParams.get('priority') || 'all');
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingComplaint, setEditingComplaint] = useState<Complaint | null>(null);
   const [viewingComplaint, setViewingComplaint] = useState<Complaint | null>(null);
+  const [statusUpdateComplaint, setStatusUpdateComplaint] = useState<Complaint | null>(null);
+  const [statusUpdateForm, setStatusUpdateForm] = useState({
+    status: '',
+    workType: '',
+    notes: '',
+    resolutionNotes: ''
+  });
+
+  // Handle URL parameter changes
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const priority = searchParams.get('priority');
+    const search = searchParams.get('search');
+    
+    if (status && status !== statusFilter) {
+      setStatusFilter(status);
+    }
+    if (priority && priority !== priorityFilter) {
+      setPriorityFilter(priority);
+    }
+    if (search && search !== searchTerm) {
+      setSearchTerm(search);
+    }
+  }, [searchParams]);
+
+  // Update URL when filters change (with debounce for search)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const params = new URLSearchParams();
+      
+      if (searchTerm && searchTerm !== '') {
+        params.set('search', searchTerm);
+      }
+      if (statusFilter && statusFilter !== 'all') {
+        params.set('status', statusFilter);
+      }
+      if (priorityFilter && priorityFilter !== 'all') {
+        params.set('priority', priorityFilter);
+      }
+      
+      // Only update URL if params have changed
+      const newSearch = params.toString();
+      const currentSearch = searchParams.toString();
+      if (newSearch !== currentSearch) {
+        setSearchParams(params, { replace: true });
+      }
+    }, 300); // 300ms debounce for search, immediate for dropdowns
+    
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, statusFilter, priorityFilter]);
 
   React.useEffect(() => {
     const fetchComplaints = async () => {
@@ -123,8 +249,16 @@ const ComplaintsList: React.FC = () => {
       try {
         const result = await apiService.getComplaints();
         if (result && result.success && Array.isArray(result.data)) {
-          // Map raw sheet data to expected UI shape
-          const mapped = result.data.map(mapComplaintData);
+          // Map raw sheet data to expected UI shape and sort by creation date (most recent first)
+          const mapped = result.data.map(mapComplaintData).filter(complaint => {
+            // Filter out any null/invalid complaints
+            return complaint && complaint.id && complaint.priority && complaint.status;
+          }).sort((a, b) => {
+            // Sort by creation date - most recent first
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+            return dateB.getTime() - dateA.getTime();
+          });
           setComplaints(mapped);
           setError(null);
         } else {
@@ -146,10 +280,37 @@ const ComplaintsList: React.FC = () => {
   // Filter complaints based on user access and search criteria
   const filteredComplaints = complaints.filter(complaint => {
     const matchesAccess = canAccessRegion(complaint.region);
+    
+    // Enhanced search functionality - search across multiple fields
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = searchTerm === '' || 
-      complaint.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      complaint.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      complaint.id.toLowerCase().includes(searchTerm.toLowerCase());
+      // Basic complaint info
+      complaint.title.toLowerCase().includes(searchLower) ||
+      complaint.id.toLowerCase().includes(searchLower) ||
+      complaint.description.toLowerCase().includes(searchLower) ||
+      
+      // Customer information
+      complaint.customer?.name?.toLowerCase().includes(searchLower) ||
+      complaint.customer?.email?.toLowerCase().includes(searchLower) ||
+      complaint.customer?.phone?.toLowerCase().includes(searchLower) ||
+      complaint.customer?.address?.toLowerCase().includes(searchLower) ||
+      
+      // Contract and business information
+      complaint.contractNumber?.toLowerCase().includes(searchLower) ||
+      complaint.businessPartner?.toLowerCase().includes(searchLower) ||
+      complaint.customer?.contractNumber?.toLowerCase().includes(searchLower) ||
+      complaint.customer?.businessPartner?.toLowerCase().includes(searchLower) ||
+      
+      // Account and meter information
+      complaint.customer?.accountNumber?.toLowerCase().includes(searchLower) ||
+      complaint.customer?.meterNumber?.toLowerCase().includes(searchLower) ||
+      
+      // Repair order information
+      complaint.repairOrder?.toLowerCase().includes(searchLower) ||
+      
+      // Region and location
+      complaint.region?.toLowerCase().includes(searchLower);
+      
     const matchesStatus = statusFilter === 'all' || complaint.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || complaint.priority === priorityFilter;
 
@@ -157,14 +318,14 @@ const ComplaintsList: React.FC = () => {
   });
 
   const handleViewComplaint = (complaint: Complaint) => {
-    setViewingComplaint(complaint);
+    navigate(`/dashboard/complaints/${complaint.id}`);
   };
 
   const handleEditComplaint = (complaint: Complaint) => {
     if (!permissions.complaints.update) {
       toast({
-        title: "Access Denied",
-        description: "You don't have permission to edit complaints.",
+        title: t('common.error'),
+        description: t('permissions.access_denied'),
         variant: "destructive"
       });
       return;
@@ -179,17 +340,24 @@ const ComplaintsList: React.FC = () => {
       const result = await apiService.updateComplaint(editingComplaint.id, editingComplaint);
 
       if (result.success) {
-        // Refresh complaints list
+        // Refresh complaints list with sorting
         const complaintsResult = await apiService.getComplaints();
         if (complaintsResult.success && Array.isArray(complaintsResult.data)) {
-          const mapped = complaintsResult.data.map(mapComplaintData);
+          const mapped = complaintsResult.data.map(mapComplaintData).filter(complaint => {
+            return complaint && complaint.id && complaint.priority && complaint.status;
+          }).sort((a, b) => {
+            // Sort by creation date - most recent first
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+            return dateB.getTime() - dateA.getTime();
+          });
           setComplaints(mapped);
         }
 
         setEditingComplaint(null);
         toast({
-          title: "Complaint Updated",
-          description: "The complaint has been successfully updated.",
+          title: t('complaint.updated'),
+          description: t('complaint.update_success'),
         });
       } else {
         throw new Error(result.error || 'Failed to update complaint');
@@ -197,8 +365,8 @@ const ComplaintsList: React.FC = () => {
     } catch (error) {
       console.error('Error updating complaint:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update complaint",
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('complaint.update_failed'),
         variant: "destructive"
       });
     }
@@ -241,10 +409,17 @@ const ComplaintsList: React.FC = () => {
       const result = await apiService.assignComplaint(complaintId, assigneeId);
 
       if (result.success) {
-        // Refresh complaints list
+        // Refresh complaints list with sorting
         const complaintsResult = await apiService.getComplaints();
         if (complaintsResult.success && Array.isArray(complaintsResult.data)) {
-          const mapped = complaintsResult.data.map(mapComplaintData);
+          const mapped = complaintsResult.data.map(mapComplaintData).filter(complaint => {
+            return complaint && complaint.id && complaint.priority && complaint.status;
+          }).sort((a, b) => {
+            // Sort by creation date - most recent first
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+            return dateB.getTime() - dateA.getTime();
+          });
           setComplaints(mapped);
         }
 
@@ -260,6 +435,104 @@ const ComplaintsList: React.FC = () => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to assign complaint",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleStatusUpdate = (complaint: Complaint) => {
+    if (!permissions.complaints.update) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to update complaint status.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setStatusUpdateComplaint(complaint);
+    setStatusUpdateForm({
+      status: complaint.status,
+      workType: '',
+      notes: '',
+      resolutionNotes: ''
+    });
+  };
+
+  const handleStatusUpdateSubmit = async () => {
+    if (!statusUpdateComplaint) return;
+
+    if (!statusUpdateForm.status) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a status.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (statusUpdateForm.status === 'resolved' && !statusUpdateForm.workType) {
+      toast({
+        title: "Validation Error",
+        description: "Please select the type of work done when resolving the complaint.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const updateData = {
+        ...statusUpdateComplaint,
+        status: statusUpdateForm.status,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.id || user?.name || 'Unknown',
+        workType: statusUpdateForm.workType,
+        resolutionNotes: statusUpdateForm.resolutionNotes,
+        notes: statusUpdateComplaint.notes ? 
+          [...statusUpdateComplaint.notes, statusUpdateForm.notes].filter(note => note.trim()) :
+          [statusUpdateForm.notes].filter(note => note.trim())
+      };
+
+      if (statusUpdateForm.status === 'resolved') {
+        updateData.resolvedAt = new Date().toISOString();
+      }
+
+      const result = await apiService.updateComplaint(statusUpdateComplaint.id, updateData);
+
+      if (result.success) {
+        // Refresh complaints list with sorting
+        const complaintsResult = await apiService.getComplaints();
+        if (complaintsResult.success && Array.isArray(complaintsResult.data)) {
+          const mapped = complaintsResult.data.map(mapComplaintData).filter(complaint => {
+            return complaint && complaint.id && complaint.priority && complaint.status;
+          }).sort((a, b) => {
+            // Sort by creation date - most recent first
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+            return dateB.getTime() - dateA.getTime();
+          });
+          setComplaints(mapped);
+        }
+
+        setStatusUpdateComplaint(null);
+        setStatusUpdateForm({
+          status: '',
+          workType: '',
+          notes: '',
+          resolutionNotes: ''
+        });
+
+        toast({
+          title: "Status Updated",
+          description: `Complaint status has been updated to ${statusUpdateForm.status}.`,
+        });
+      } else {
+        throw new Error(result.error || 'Failed to update complaint status');
+      }
+    } catch (error) {
+      console.error('Error updating complaint status:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update complaint status",
         variant: "destructive"
       });
     }
@@ -290,17 +563,30 @@ const ComplaintsList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between animate-fade-in">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 animate-fade-in">
         <div>
-          <h1 className="text-4xl font-extrabold text-primary drop-shadow-sm tracking-tight">All Complaints</h1>
-          <p className="text-lg text-muted-foreground mt-2 max-w-2xl">Manage and track electrical supply complaints</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary drop-shadow-sm tracking-tight">All Complaints</h1>
+          <p className="text-base sm:text-lg text-muted-foreground mt-2 max-w-2xl">Manage and track electrical supply complaints</p>
         </div>
-        <ProtectedAction resource="complaints" action="create">
-          <Button className="bg-gradient-primary" onClick={() => window.location.href = '/complaint-form'}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Complaint
-          </Button>
-        </ProtectedAction>
+        <div className="flex items-center space-x-2">
+          <RepairOrderExportDialog 
+            complaints={filteredComplaints}
+            onExport={() => {
+              toast({
+                title: "Export Successful",
+                description: "Repair orders have been generated successfully",
+                variant: "default"
+              });
+            }}
+          />
+          <ProtectedAction resource="complaints" action="create">
+            <Button className="bg-gradient-primary" onClick={() => window.location.href = '/complaint-form'} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">New Complaint</span>
+              <span className="sm:hidden">New</span>
+            </Button>
+          </ProtectedAction>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -312,15 +598,35 @@ const ComplaintsList: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary/60" />
-              <Input
-                placeholder="Search complaints..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 focus:ring-2 focus:ring-primary"
-              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Input
+                      placeholder="Search by ID, customer, phone, contract, repair order..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-8 focus:ring-2 focus:ring-primary"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium">Search across:</p>
+                      <ul className="space-y-0.5 text-xs">
+                        <li>• Complaint ID & Title</li>
+                        <li>• Customer Name, Email & Phone</li>
+                        <li>• Contract Number & Business Partner</li>
+                        <li>• Account & Meter Number</li>
+                        <li>• Repair Order Number</li>
+                        <li>• Address & Region</li>
+                      </ul>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Info className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary/40" />
             </div>
             
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -332,6 +638,7 @@ const ComplaintsList: React.FC = () => {
                 <SelectItem value="open">Open</SelectItem>
                 <SelectItem value="in-progress">In Progress</SelectItem>
                 <SelectItem value="resolved">Resolved</SelectItem>
+                <SelectItem value="escalated">Escalated</SelectItem>
                 <SelectItem value="closed">Closed</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
@@ -357,6 +664,8 @@ const ComplaintsList: React.FC = () => {
                 setSearchTerm('');
                 setStatusFilter('all');
                 setPriorityFilter('all');
+                // Clear URL parameters as well
+                setSearchParams({}, { replace: true });
               }}
             >
               Clear Filters
@@ -368,34 +677,72 @@ const ComplaintsList: React.FC = () => {
       {/* Complaints Table */}
       <Card className="border-border animate-slide-up" style={{ animationDelay: '0.2s' }}>
         <CardHeader>
-          <CardTitle>
-            Complaints ({filteredComplaints.length})
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center space-x-2">
+              <span>Complaints ({filteredComplaints.length})</span>
+              {filteredComplaints.length > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                        <SortDesc className="h-4 w-4" />
+                        <span>Recent First</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Complaints are sorted by creation date (newest first)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </CardTitle>
+            {searchTerm && (
+              <Badge variant="secondary" className="flex items-center space-x-1">
+                <Search className="h-3 w-3" />
+                <span>Searching: "{searchTerm}"</span>
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-x-auto">
+            <Table className="min-w-[1200px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Customer</TableHead>
+                  <TableHead>Mobile</TableHead>
+                  <TableHead>Address</TableHead>
                   <TableHead>Region</TableHead>
+                  <TableHead>Service Center</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>
+                    <div className="flex items-center space-x-1">
+                      <Clock className="h-4 w-4" />
+                      <span>Created</span>
+                      <SortDesc className="h-3 w-3 text-primary" />
+                    </div>
+                  </TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredComplaints.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                       No complaints found matching your criteria
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredComplaints.map((complaint) => (
+                  filteredComplaints.map((complaint) => {
+                    // Additional safety check
+                    if (!complaint || !complaint.priority || !complaint.status) {
+                      console.warn('Invalid complaint data:', complaint);
+                      return null;
+                    }
+                    return (
                     <TableRow key={complaint.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-2">
@@ -412,7 +759,7 @@ const ComplaintsList: React.FC = () => {
                         <div className="max-w-[200px]">
                           <p className="font-medium truncate">{complaint.title}</p>
                           <p className="text-sm text-muted-foreground truncate">
-                            {complaint.category.replace('-', ' ')}
+                            {t(`complaint_type.${complaint.category}`)}
                           </p>
                         </div>
                       </TableCell>
@@ -423,22 +770,42 @@ const ComplaintsList: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{complaint.customer.phone || 'N/A'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm max-w-[150px] truncate" title={complaint.customer.address}>
+                            {complaint.customer.address || 'N/A'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <span className="text-sm text-primary">{complaint.region}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Building className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{complaint.customer.serviceCenter || complaint.serviceCenter || 'N/A'}</span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge 
                           variant="secondary"
-                          className={`${PRIORITY_CONFIG[complaint.priority].bgColor} ${PRIORITY_CONFIG[complaint.priority].color}`}
+                          className={`${PRIORITY_CONFIG[complaint.priority]?.bgColor || 'bg-muted'} ${PRIORITY_CONFIG[complaint.priority]?.color || 'text-muted-foreground'}`}
                         >
-                          {PRIORITY_CONFIG[complaint.priority].label}
+                          {PRIORITY_CONFIG[complaint.priority]?.labelKey ? t(PRIORITY_CONFIG[complaint.priority].labelKey) : complaint.priority || 'Unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 
                           variant="secondary"
-                          className={`${STATUS_CONFIG[complaint.status].bgColor} ${STATUS_CONFIG[complaint.status].color}`}
+                          className={`${STATUS_CONFIG[complaint.status]?.bgColor || 'bg-muted'} ${STATUS_CONFIG[complaint.status]?.color || 'text-muted-foreground'}`}
                         >
-                          {STATUS_CONFIG[complaint.status].label}
+                          {STATUS_CONFIG[complaint.status]?.labelKey ? t(STATUS_CONFIG[complaint.status].labelKey) : complaint.status || 'Unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -448,12 +815,13 @@ const ComplaintsList: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleViewComplaint(complaint)}
                             className="h-8 w-8 p-0"
+                            title="View Details"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -461,8 +829,20 @@ const ComplaintsList: React.FC = () => {
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => handleStatusUpdate(complaint)}
+                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                              title="Update Status"
+                            >
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          </ProtectedAction>
+                          <ProtectedAction resource="complaints" action="update">
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleEditComplaint(complaint)}
                               className="h-8 w-8 p-0"
+                              title="Edit Complaint"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -473,6 +853,7 @@ const ComplaintsList: React.FC = () => {
                               size="sm"
                               onClick={() => handleDeleteComplaint(complaint.id)}
                               className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              title="Delete Complaint"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -480,7 +861,8 @@ const ComplaintsList: React.FC = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -502,6 +884,9 @@ const ComplaintsList: React.FC = () => {
                   </Badge>
                 )}
               </DialogTitle>
+              <DialogDescription>
+                View detailed information about this complaint including customer details, status, and resolution history.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
               {/* Basic Information */}
@@ -519,16 +904,16 @@ const ComplaintsList: React.FC = () => {
                   <div>
                     <Label className="text-sm font-medium">Priority</Label>
                     <div className="mt-1">
-                      <Badge className={`${PRIORITY_CONFIG[viewingComplaint.priority].bgColor} ${PRIORITY_CONFIG[viewingComplaint.priority].color}`}>
-                        {PRIORITY_CONFIG[viewingComplaint.priority].label}
+                      <Badge className={`${PRIORITY_CONFIG[viewingComplaint.priority]?.bgColor || 'bg-muted'} ${PRIORITY_CONFIG[viewingComplaint.priority]?.color || 'text-muted-foreground'}`}>
+                        {PRIORITY_CONFIG[viewingComplaint.priority]?.label || viewingComplaint.priority || 'Unknown'}
                       </Badge>
                     </div>
                   </div>
                   <div>
                     <Label className="text-sm font-medium">Status</Label>
                     <div className="mt-1">
-                      <Badge className={`${STATUS_CONFIG[viewingComplaint.status].bgColor} ${STATUS_CONFIG[viewingComplaint.status].color}`}>
-                        {STATUS_CONFIG[viewingComplaint.status].label}
+                      <Badge className={`${STATUS_CONFIG[viewingComplaint.status]?.bgColor || 'bg-muted'} ${STATUS_CONFIG[viewingComplaint.status]?.color || 'text-muted-foreground'}`}>
+                        {STATUS_CONFIG[viewingComplaint.status]?.label || viewingComplaint.status || 'Unknown'}
                       </Badge>
                     </div>
                   </div>
@@ -726,6 +1111,134 @@ const ComplaintsList: React.FC = () => {
                 </Button>
                 <Button onClick={handleUpdateComplaint}>
                   Update Complaint
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Status Update Dialog */}
+      {statusUpdateComplaint && (
+        <Dialog open={!!statusUpdateComplaint} onOpenChange={() => setStatusUpdateComplaint(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>Update Status - {statusUpdateComplaint.id}</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Current Status Info */}
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Current Information</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Customer:</span>
+                    <p className="font-medium">{statusUpdateComplaint.customer.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Current Status:</span>
+                    <div className="mt-1">
+                      <Badge className={`${STATUS_CONFIG[statusUpdateComplaint.status]?.bgColor || 'bg-muted'} ${STATUS_CONFIG[statusUpdateComplaint.status]?.color || 'text-muted-foreground'}`}>
+                        {STATUS_CONFIG[statusUpdateComplaint.status]?.label || statusUpdateComplaint.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Title:</span>
+                    <p className="font-medium">{statusUpdateComplaint.title}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Region:</span>
+                    <p className="font-medium">{statusUpdateComplaint.region}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Update Form */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="status-update">New Status *</Label>
+                    <Select 
+                      value={statusUpdateForm.status} 
+                      onValueChange={(value) => setStatusUpdateForm({...statusUpdateForm, status: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="escalated">Escalated</SelectItem>
+                        <SelectItem value="closed">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {statusUpdateForm.status === 'resolved' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="work-type">Type of Work Done *</Label>
+                      <Select 
+                        value={statusUpdateForm.workType} 
+                        onValueChange={(value) => setStatusUpdateForm({...statusUpdateForm, workType: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select work type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {WORK_TYPES.map((workType) => (
+                            <SelectItem key={workType.value} value={workType.value}>
+                              {workType.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
+                {statusUpdateForm.status === 'resolved' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="resolution-notes">Resolution Details</Label>
+                    <Textarea
+                      id="resolution-notes"
+                      placeholder="Describe the work performed and resolution details..."
+                      value={statusUpdateForm.resolutionNotes}
+                      onChange={(e) => setStatusUpdateForm({...statusUpdateForm, resolutionNotes: e.target.value})}
+                      rows={3}
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="status-notes">Additional Notes</Label>
+                  <Textarea
+                    id="status-notes"
+                    placeholder="Add any additional notes about this status update..."
+                    value={statusUpdateForm.notes}
+                    onChange={(e) => setStatusUpdateForm({...statusUpdateForm, notes: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setStatusUpdateComplaint(null)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleStatusUpdateSubmit}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Update Status
                 </Button>
               </div>
             </div>

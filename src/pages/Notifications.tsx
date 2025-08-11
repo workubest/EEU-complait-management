@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Bell, 
   CheckCircle, 
@@ -14,6 +13,8 @@ import {
   Settings
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { apiService } from '@/lib/api';
 import { format } from 'date-fns';
 
 interface Notification {
@@ -28,29 +29,52 @@ interface Notification {
   actionRequired?: boolean;
 }
 
-// import mockNotifications: Notification[] = [...];
+const formatDate = (dateString: string) => {
+  try {
+    return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return new Date(dateString).toLocaleDateString();
+  }
+};
 
 export function Notifications() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'action-required'>('all');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   React.useEffect(() => {
-    setLoading(true);
-    fetch('/api/notifications?action=getComplaints')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch notifications');
-        return res.json();
-      })
-      .then(data => {
-        setNotifications(Array.isArray(data) ? data : []);
-        setError(null);
-      })
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+    fetchNotifications();
+    
+    // Set up real-time updates (polling every 30 seconds)
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiService.getNotifications();
+      if (result.success && result.data) {
+        setNotifications(Array.isArray(result.data) ? result.data : []);
+      } else {
+        console.error('Failed to fetch notifications:', result.error);
+        setNotifications([]);
+      }
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+      setError('Failed to load notifications');
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   const getNotificationIcon = (type: Notification['type']) => {
     const icons = {
@@ -60,7 +84,7 @@ export function Notifications() {
       error: Zap,
       system: Settings
     };
-    return icons[type];
+    return icons[type] || Bell;
   };
 
   const getNotificationColor = (type: Notification['type'], priority: Notification['priority']) => {
@@ -71,7 +95,7 @@ export function Notifications() {
       error: 'text-destructive border-destructive/20 bg-destructive/5',
       system: 'text-muted-foreground border-border bg-muted/20'
     };
-    return colors[type];
+    return colors[type] || 'text-muted-foreground border-border bg-muted/20';
   };
 
   const getPriorityBadge = (priority: Notification['priority']) => {
@@ -81,7 +105,7 @@ export function Notifications() {
       high: { label: 'High', className: 'bg-warning/10 text-warning' },
       critical: { label: 'Critical', className: 'bg-destructive/10 text-destructive' }
     };
-    return configs[priority];
+    return configs[priority] || { label: 'Unknown', className: 'bg-muted text-muted-foreground' };
   };
 
   const markAsRead = (notificationId: string) => {
@@ -134,15 +158,15 @@ export function Notifications() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between animate-fade-in">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Notifications</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Notifications</h1>
           <p className="text-muted-foreground mt-2">
             Stay updated with system alerts and complaint notifications
           </p>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Badge variant="outline" className="bg-primary/10 text-primary">
             {unreadCount} unread
           </Badge>
@@ -151,14 +175,16 @@ export function Notifications() {
               {actionRequiredCount} action required
             </Badge>
           )}
-          <Button variant="outline" onClick={markAllAsRead}>
-            Mark All Read
+          <Button variant="outline" onClick={markAllAsRead} size="sm">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Mark All Read</span>
+            <span className="sm:hidden">Mark Read</span>
           </Button>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex space-x-2 animate-slide-up">
+      <div className="flex flex-wrap gap-2 animate-slide-up">
         <Button
           variant={filter === 'all' ? 'default' : 'outline'}
           onClick={() => setFilter('all')}
@@ -240,7 +266,7 @@ export function Notifications() {
                           {notification.message}
                         </p>
                         <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                          <span>{format(new Date(notification.createdAt), 'MMM dd, yyyy HH:mm')}</span>
+                          <span>{formatDate(notification.createdAt)}</span>
                           {notification.relatedComplaintId && (
                             <span className="text-primary">
                               Related: {notification.relatedComplaintId}

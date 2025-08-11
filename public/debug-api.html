@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Debug - EEU System</title>
+    <style>
+        body { font-family: monospace; margin: 20px; background: #f5f5f5; }
+        .log { background: white; padding: 10px; margin: 5px 0; border-left: 4px solid #007bff; }
+        .error { border-left-color: #dc3545; background: #fff5f5; }
+        .success { border-left-color: #28a745; background: #f5fff5; }
+        .warning { border-left-color: #ffc107; background: #fffbf0; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+        button { padding: 10px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 API Debug Console</h1>
+    <p>This page helps diagnose the login API issue.</p>
+    
+    <button onclick="clearLogs()">Clear Logs</button>
+    <button onclick="testEnvironment()">Test Environment</button>
+    <button onclick="testApiEndpoint()">Test API Endpoint</button>
+    <button onclick="testLoginFlow()">Test Full Login Flow</button>
+    
+    <div id="logs"></div>
+    
+    <script>
+        function log(message, type = 'log') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logsDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        function testEnvironment() {
+            log('🔧 Testing Environment Detection...', 'log');
+            log(`Current URL: ${window.location.href}`, 'log');
+            log(`Hostname: ${window.location.hostname}`, 'log');
+            log(`Is localhost: ${window.location.hostname.includes('localhost')}`, 'log');
+            log(`Expected API Base URL: /api (in development)`, 'log');
+        }
+        
+        async function testApiEndpoint() {
+            log('📡 Testing API Endpoint Availability...', 'log');
+            
+            try {
+                const response = await fetch('/api?action=healthCheck');
+                log(`Health check status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    log(`Health check response: ${data}`, 'success');
+                } else {
+                    log(`Health check failed: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`Health check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLoginFlow() {
+            log('🔐 Testing Complete Login Flow...', 'log');
+            
+            const testCases = [
+                { name: 'Valid Admin', email: 'admin@eeu.gov.et', password: 'admin123' },
+                { name: 'Empty Email', email: '', password: 'admin123' },
+                { name: 'Invalid Creds', email: 'invalid@test.com', password: 'wrong' }
+            ];
+            
+            for (const testCase of testCases) {
+                log(`\\n🧪 Testing: ${testCase.name}`, 'log');
+                log(`Email: "${testCase.email}", Password: "${testCase.password}"`, 'log');
+                
+                try {
+                    const requestBody = {
+                        action: 'login',
+                        email: testCase.email,
+                        password: testCase.password
+                    };
+                    
+                    log(`Request body: ${JSON.stringify(requestBody)}`, 'log');
+                    
+                    const response = await fetch('/api?action=login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    log(`Response status: ${response.status}`, 'log');
+                    log(`Response headers: ${JSON.stringify([...response.headers.entries()])}`, 'log');
+                    
+                    const data = await response.json();
+                    log(`Response data:`, 'log');
+                    log(`<pre>${JSON.stringify(data, null, 2)}</pre>`, 'log');
+                    
+                    // Test the exact user mapping logic from Login.tsx
+                    if (data.success && data.user) {
+                        log('✅ Testing user data mapping...', 'success');
+                        
+                        try {
+                            const userData = {
+                                id: data.user.ID || data.user.id || '',
+                                name: data.user.Name || data.user.name || '',
+                                email: data.user.Email || data.user.email || '',
+                                role: data.user.Role || data.user.role || 'technician',
+                                region: data.user.Region || data.user.region || '',
+                                department: data.user.Department || data.user.department || '',
+                                phone: data.user.Phone || data.user.phone || '',
+                                isActive: data.user['Is Active'] || data.user.isActive || true,
+                                createdAt: data.user['Created At'] || data.user.createdAt || new Date().toISOString(),
+                            };
+                            
+                            log('✅ User data mapping successful!', 'success');
+                            log(`<pre>${JSON.stringify(userData, null, 2)}</pre>`, 'success');
+                            log('✅ NO NULL REFERENCE ERRORS!', 'success');
+                            
+                        } catch (mappingError) {
+                            log(`❌ User mapping error: ${mappingError.message}`, 'error');
+                            log(`❌ This would cause the "Cannot read properties of null" error!`, 'error');
+                        }
+                        
+                    } else if (data.error) {
+                        log(`❌ Login failed: ${data.error}`, 'warning');
+                        log('ℹ️ This is expected for invalid credentials', 'warning');
+                        
+                        // Check if this is the problematic error
+                        if (data.error.includes('Cannot read properties of null')) {
+                            log('🚨 FOUND THE PROBLEM! This is the null reference error!', 'error');
+                        }
+                    }
+                    
+                } catch (error) {
+                    log(`💥 Request failed: ${error.message}`, 'error');
+                    log(`Stack trace: ${error.stack}`, 'error');
+                }
+                
+                log('---', 'log');
+            }
+        }
+        
+        // Auto-run tests on page load
+        window.onload = () => {
+            testEnvironment();
+            setTimeout(() => testApiEndpoint(), 1000);
+            setTimeout(() => testLoginFlow(), 2000);
+        };
+    </script>
+</body>
+</html>

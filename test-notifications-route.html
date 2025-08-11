@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Notifications Route Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .test-link:hover {
+            background-color: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Notifications Route Fix Test</h1>
+        <p>This page tests the fix for the 404 error when accessing <code>/notifications</code></p>
+        
+        <div class="status info">
+            <strong>Issue:</strong> Users trying to access <code>/notifications</code> were getting a 404 error because the route was nested under <code>/dashboard/*</code>
+        </div>
+        
+        <div class="status success">
+            <strong>Solution:</strong> Added a redirect from <code>/notifications</code> to <code>/dashboard/notifications</code>
+        </div>
+        
+        <h2>Test Links</h2>
+        <p>Click these links to test the routing fix:</p>
+        
+        <a href="http://localhost:8081/notifications" class="test-link" target="_blank">
+            Test /notifications (should redirect)
+        </a>
+        
+        <a href="http://localhost:8081/dashboard/notifications" class="test-link" target="_blank">
+            Test /dashboard/notifications (direct)
+        </a>
+        
+        <a href="http://localhost:8081/some-invalid-route" class="test-link" target="_blank">
+            Test invalid route (should show improved 404)
+        </a>
+        
+        <h2>Expected Behavior</h2>
+        <ul>
+            <li><strong>/notifications</strong> → Should redirect to <code>/dashboard/notifications</code></li>
+            <li><strong>/dashboard/notifications</strong> → Should show the notifications page (if authenticated)</li>
+            <li><strong>Invalid routes</strong> → Should show improved 404 page with suggestions</li>
+        </ul>
+        
+        <h2>Changes Made</h2>
+        <ol>
+            <li>Added <code>Navigate</code> import to App.tsx</li>
+            <li>Added redirect route: <code>&lt;Route path="/notifications" element={&lt;Navigate to="/dashboard/notifications" replace /&gt;} /&gt;</code></li>
+            <li>Enhanced NotFound.tsx with better UI and smart suggestions</li>
+            <li>Added route suggestions based on the attempted path</li>
+        </ol>
+        
+        <div class="status success">
+            <strong>✅ Fix Status:</strong> The 404 error for <code>/notifications</code> should now be resolved!
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>🔍 Debug Information</h2>
+        <p><strong>Current URL:</strong> <span id="currentUrl"></span></p>
+        <p><strong>Referrer:</strong> <span id="referrer"></span></p>
+        <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+        
+        <h3>Console Logs</h3>
+        <p>Check the browser console for any 404 error logs from NotFound.tsx</p>
+        
+        <button onclick="testRedirect()" class="test-link">Test Redirect Programmatically</button>
+    </div>
+
+    <script>
+        // Display debug information
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('referrer').textContent = document.referrer || 'None';
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        
+        function testRedirect() {
+            console.log('Testing redirect from /notifications...');
+            // This would normally cause a 404, but should now redirect
+            window.open('http://localhost:8081/notifications', '_blank');
+        }
+        
+        // Log page load
+        console.log('Test page loaded at:', new Date().toISOString());
+        console.log('Testing notifications route fix...');
+    </script>
+</body>
+</html>

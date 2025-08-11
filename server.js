@@ -16,7 +16,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-const googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycby6Do0ky06Pm6OtY62iTOuSWABmZsQAVdqtaXN27SQb8Hgtv_JqVuMPNdXKh-fW5bU/exec';
+const googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbwB13dJpn1d_3Xin2-FtpdpMNmVvMSpmfdxeijSnGEmRM5mRQxMJK-dy6TXmsR9ExM/exec';
 
 // Handle API requests
 app.use('/api', async (req, res) => {

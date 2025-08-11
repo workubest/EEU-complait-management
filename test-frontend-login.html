@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Login Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>Frontend Login Test</h1>
+    
+    <div class="test-section">
+        <h2>Login Form</h2>
+        <div>
+            <input type="email" id="email" placeholder="Email" value="admin@eeu.gov.et">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="testLogin()">Test Login</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testLogin() {
+            clearResults();
+            log('<h3>Testing Frontend Login...</h3>');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                log(`📡 Attempting login with: ${email}`, 'info');
+                
+                const response = await fetch('/api?action=login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                log(`Status: ${response.status}`, 'info');
+                log(`Success: ${data.success}`, data.success ? 'success' : 'error');
+                
+                if (data.success) {
+                    // Check both possible response formats
+                    const user = data.data?.user || data.user;
+                    
+                    if (user) {
+                        log('✅ Login successful!', 'success');
+                        log(`User: ${user.name || user.Name} (${user.email || user.Email})`, 'info');
+                        log(`Role: ${user.role || user.Role}`, 'info');
+                        
+                        // Check if user has permissions for user management
+                        if (user.permissions && user.permissions.users) {
+                            log(`Users Read Permission: ${user.permissions.users.read}`, 'info');
+                            if (user.permissions.users.read) {
+                                log('✅ User can access User Management page', 'success');
+                            } else {
+                                log('❌ User cannot access User Management page', 'error');
+                            }
+                        } else {
+                            log('⚠️  No permissions found - this might cause issues', 'error');
+                        }
+                        
+                        log('<h4>Full Response:</h4>', 'info');
+                        log(`<pre>${JSON.stringify(data, null, 2)}</pre>`, 'info');
+                        
+                    } else {
+                        log('❌ No user data in response', 'error');
+                    }
+                } else {
+                    log(`❌ Login failed: ${data.error || 'Unknown error'}`, 'error');
+                    log(`<pre>${JSON.stringify(data, null, 2)}</pre>`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 Login error: ${error.message}`, 'error');
+                console.error('Login error:', error);
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            testLogin();
+        };
+    </script>
+</body>
+</html>
