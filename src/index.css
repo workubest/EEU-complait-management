@@ -1,0 +1,363 @@
+/* Import Amharic/Ethiopic fonts */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Ethiopic:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Ethiopian Electric Utility Brand Colors */
+    /* Orange from new logo: #FF8C42 */
+    --primary: 22 100% 63%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 22 100% 75%;
+
+    /* Green from new logo: #4CAF50 */
+    --secondary: 122 39% 49%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    /* Ethiopian Electric Utility Brand Colors */
+    --eeu-orange: 22 100% 63%; /* #FF8C42 */
+    --eeu-green: 122 39% 49%; /* #4CAF50 */
+    --eeu-orange-light: 22 100% 85%;
+    --eeu-green-light: 122 39% 85%;
+    
+    --success: 122 39% 49%; /* Use EEU Green */
+    --success-foreground: 0 0% 98%;
+    --warning: 22 100% 63%; /* Use EEU Orange */
+    --warning-foreground: 0 0% 98%;
+    --destructive: 0 68% 49%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 25 95% 53%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(22 100% 63%), hsl(22 100% 75%));
+    --gradient-hero: linear-gradient(135deg, hsl(22 100% 63%) 0%, hsl(122 39% 49%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
+
+    /* Shadows */
+    --shadow-card: 0 4px 6px -1px hsl(22 100% 63% / 0.1), 0 2px 4px -1px hsl(22 100% 63% / 0.06);
+    --shadow-elevated: 0 10px 25px -3px hsl(22 100% 63% / 0.1), 0 4px 6px -2px hsl(22 100% 63% / 0.05);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Custom animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-logo-float {
+    animation: logoFloat 4s ease-in-out infinite;
+  }
+
+  .animate-sparkle {
+    animation: sparkle 2s ease-in-out infinite;
+  }
+
+  .animate-glow-pulse {
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .bg-gradient-card {
+    background: var(--gradient-card);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes logoFloat {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(2deg);
+    }
+  }
+
+  /* Enhanced shadow effects */
+  .shadow-3xl {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Backdrop blur utilities */
+  .backdrop-blur-xs {
+    backdrop-filter: blur(2px);
+  }
+
+  /* Enhanced gradient backgrounds */
+  .bg-gradient-to-br {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+  }
+
+  /* Interactive hover effects */
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Additional interactive animations */
+  @keyframes wiggle {
+    0%, 7% { transform: rotateZ(0); }
+    15% { transform: rotateZ(-15deg); }
+    20% { transform: rotateZ(10deg); }
+    25% { transform: rotateZ(-10deg); }
+    30% { transform: rotateZ(6deg); }
+    35% { transform: rotateZ(-4deg); }
+    40%, 100% { transform: rotateZ(0); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { 
+      box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+      transform: scale(1);
+    }
+    50% { 
+      box-shadow: 0 0 40px rgba(76, 175, 80, 0.6);
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes rainbow {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+  }
+
+  .animate-wiggle {
+    animation: wiggle 2s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-rainbow {
+    animation: rainbow 3s linear infinite;
+  }
+
+  /* Staggered animations */
+  .animate-stagger-1 { animation-delay: 0.1s; }
+  .animate-stagger-2 { animation-delay: 0.2s; }
+  .animate-stagger-3 { animation-delay: 0.3s; }
+  .animate-stagger-4 { animation-delay: 0.4s; }
+  .animate-stagger-5 { animation-delay: 0.5s; }
+
+  @keyframes sparkle {
+    0%, 100% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+
+  @keyframes glowPulse {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.05);
+    }
+  }
+
+  /* Amharic/Ethiopic Text Support - Minimal approach for PowerGe'ez compatibility */
+  .amharic-support {
+    /* Only essential font styling */
+    font-family: 'Noto Sans Ethiopic', 'Nyala', 'Ebrima', Arial, sans-serif;
+    
+    /* Remove all IME interference - let PowerGe'ez handle it naturally */
+    /* No ime-mode declarations that might conflict */
+  }
+
+  /* Ensure Amharic fonts display properly */
+  .amharic-support::placeholder {
+    font-family: 'Noto Sans Ethiopic', 'Nyala', 'Ebrima', Arial, sans-serif;
+  }
+}
+
+/* Ethiopian Electric Utility Brand Utilities */
+@layer utilities {
+  .bg-eeu-orange {
+    background-color: hsl(var(--eeu-orange));
+  }
+  
+  .bg-eeu-green {
+    background-color: hsl(var(--eeu-green));
+  }
+  
+  .bg-eeu-orange-light {
+    background-color: hsl(var(--eeu-orange-light));
+  }
+  
+  .bg-eeu-green-light {
+    background-color: hsl(var(--eeu-green-light));
+  }
+  
+  .text-eeu-orange {
+    color: hsl(var(--eeu-orange));
+  }
+  
+  .text-eeu-green {
+    color: hsl(var(--eeu-green));
+  }
+  
+  .border-eeu-orange {
+    border-color: hsl(var(--eeu-orange));
+  }
+  
+  .border-eeu-green {
+    border-color: hsl(var(--eeu-green));
+  }
+  
+  .bg-gradient-eeu {
+    background: linear-gradient(135deg, hsl(var(--eeu-orange)) 0%, hsl(var(--eeu-green)) 100%);
+  }
+  
+  .bg-gradient-eeu-reverse {
+    background: linear-gradient(135deg, hsl(var(--eeu-green)) 0%, hsl(var(--eeu-orange)) 100%);
+  }
+  
+  .bg-gradient-eeu-light {
+    background: linear-gradient(135deg, hsl(var(--eeu-orange-light)) 0%, hsl(var(--eeu-green-light)) 100%);
+  }
+}
